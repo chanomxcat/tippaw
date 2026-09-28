@@ -2,9 +2,12 @@ import type { Metadata } from "next";
 import { Prompt } from "next/font/google";
 import "./globals.css";
 
+import { Providers } from "@/ui/providers";
+
 const prompt = Prompt({
   subsets: ["thai", "latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  style: ["normal", "italic"],
   variable: "--font-prompt",
 });
 
@@ -20,7 +23,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="th" className={prompt.variable}>
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
