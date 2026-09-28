@@ -1,5 +1,6 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import type { StreamerRoom } from "./realtime/streamer-room";
+import { createDb } from "./db/client";
 
 export type AppEnv = {
   DB: D1Database;
@@ -22,11 +23,7 @@ export type AppEnv = {
   MAX_DONATION_THB: string;
 };
 
-/**
- * Placeholder for the Drizzle database handle. Task 2 introduces
- * `createDb(env: AppEnv): Db` and replaces this alias with the real type.
- */
-export type Db = unknown;
+export type Db = ReturnType<typeof createDb>;
 
 export type Deps = {
   env: AppEnv;
@@ -41,10 +38,10 @@ export type Deps = {
  */
 export async function getDeps(): Promise<Deps> {
   const { env } = await getCloudflareContext({ async: true });
+  const appEnv = env as unknown as AppEnv;
   return {
-    env: env as unknown as AppEnv,
-    // TODO(Task 2): replace with createDb(env)
-    db: undefined as Db,
+    env: appEnv,
+    db: createDb(appEnv.DB),
     now: () => new Date(),
   };
 }
