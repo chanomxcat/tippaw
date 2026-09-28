@@ -84,8 +84,17 @@ export async function redeemInvite(deps: Deps, userId: string, rawCode: string):
      )`,
   ).bind(code, userId, code, nowMs);
 
-  const [insertResult] = await deps.env.DB.batch([insertStmt, updateStmt]);
-  return insertResult?.meta.changes === 1;
+  try {
+    const [insertResult] = await deps.env.DB.batch([insertStmt, updateStmt]);
+    return insertResult?.meta.changes === 1;
+  } catch (err) {
+    // A concurrent redeemInvite call for the same user can win the race and
+    // insert its invite_redemption row first, so this batch's INSERT then
+    // collides on the user_id primary key. Idempotency still holds: if the
+    // user is now redeemed, treat it as a successful (redundant) redemption.
+    if (await hasRedeemed(deps, userId)) return true;
+    throw err;
+  }
 }
 
 /** Whether `userId` has redeemed any invite code (`invite_redemption` is one row per user). */

@@ -136,6 +136,23 @@ describe("redeemInvite", () => {
     expect(row?.usedCount).toBe(1);
   });
 
+  it("is idempotent under a concurrent double-submit by the same user: both resolve true, used_count increments once", async () => {
+    const deps = makeDeps();
+    const admin = await seedUser(deps.db);
+    const redeemer = await seedUser(deps.db);
+    const code = await seedInvite(deps, admin.userId);
+
+    const results = await Promise.all([
+      redeemInvite(deps, redeemer.userId, code),
+      redeemInvite(deps, redeemer.userId, code),
+    ]);
+
+    expect(results).toEqual([true, true]);
+
+    const row = await deps.db.query.inviteCode.findFirst({ where: (t, { eq }) => eq(t.code, code) });
+    expect(row?.usedCount).toBe(1);
+  });
+
   it("accepts a lowercase, padded raw code (' vip-1 ')", async () => {
     const deps = makeDeps();
     const admin = await seedUser(deps.db);
