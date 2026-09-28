@@ -39,6 +39,11 @@ test.describe("alert overlay (OBS browser source)", () => {
 
     const overlayPage = await context.newPage();
     await overlayPage.goto(overlayUrl);
+
+    // The OBS browser source must stay fully transparent — no MUI/CssBaseline background.
+    const overlayBodyBg = await overlayPage.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    expect(overlayBodyBg).toBe("rgba(0, 0, 0, 0)");
+
     await expect(overlayPage.getByText("TipPaw โดเนท 100 บาท")).not.toBeVisible();
 
     await page.getByRole("button", { name: "ทดสอบ Alert" }).click();

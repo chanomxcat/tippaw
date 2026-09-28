@@ -38,10 +38,8 @@ export function AlertPlayer({ event, onDone }: AlertPlayerProps) {
     setPhase("in");
     setImageOk(true);
 
-    if (event.variant.soundUrl) {
-      const audio = new Audio(event.variant.soundUrl);
-      audio.play().catch(() => {});
-    }
+    const audio = event.variant.soundUrl ? new Audio(event.variant.soundUrl) : null;
+    audio?.play().catch(() => {});
 
     const timers = [
       setTimeout(() => setPhase("hold"), TRANSITION_MS),
@@ -51,6 +49,8 @@ export function AlertPlayer({ event, onDone }: AlertPlayerProps) {
 
     return () => {
       timers.forEach(clearTimeout);
+      // Stop a previous alert's sound from overlapping the next one.
+      audio?.pause();
     };
     // Only the identity of the alert (its id) should restart the sequence.
     // eslint-disable-next-line react-hooks/exhaustive-deps

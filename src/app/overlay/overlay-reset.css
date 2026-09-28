@@ -1,0 +1,11 @@
+/* Overlay pages are embedded in OBS as a browser source: the page itself
+ * must stay fully transparent so only the alert graphic shows over the
+ * stream, with no MUI/CssBaseline (see ./layout.tsx). Imported ONLY by
+ * src/app/overlay/layout.tsx — the overlay's own separate root layout —
+ * so this reset can never leak into the (site) route group's pages. */
+html,
+body {
+  background: transparent;
+  margin: 0;
+  padding: 0;
+}

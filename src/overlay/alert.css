@@ -1,12 +1,9 @@
-/* Overlay pages are embedded in OBS as a browser source: the page itself
-   must stay fully transparent so only the alert graphic shows over the
-   stream. No MUI/CssBaseline runs here (see src/app/overlay/layout.tsx). */
-html,
-body {
-  background: transparent;
-  margin: 0;
-  padding: 0;
-}
+/* Animation-only styles for AlertPlayer. Safe to import from anywhere it
+ * renders (the OBS overlay AND the dashboard preview) — unlike the overlay's
+ * transparent-body reset, which lives in src/app/overlay/overlay-reset.css
+ * and must only ever be imported by the overlay's own root layout, never
+ * here, or it would leak into the (site) route group's MUI/CssBaseline
+ * pages as a plain global CSS import. */
 
 .tp-in-fade {
   animation: tp-fade-in 500ms ease-out both;

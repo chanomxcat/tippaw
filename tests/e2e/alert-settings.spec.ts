@@ -34,6 +34,11 @@ test.describe("alert overlay settings", () => {
 
     await page.goto("/dashboard/overlays/alert");
 
+    // The dashboard is a normal MUI page (CssBaseline sets a real body background) —
+    // it must never pick up the overlay's transparent-body reset (see AlertPlayer.tsx).
+    const dashboardBodyBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    expect(dashboardBodyBg).not.toBe("rgba(0, 0, 0, 0)");
+
     await page.getByLabel("ข้อความ template").fill("{name} ให้กำลังใจ {amount} บาท!");
     await page.getByLabel("สีข้อความ", { exact: true }).fill("#00FF00");
     await page.getByRole("button", { name: "บันทึก" }).click();
