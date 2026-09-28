@@ -53,7 +53,9 @@ Cloudflare Worker (tippaw)
 | Path | หน้าที่ |
 |---|---|
 | `/login`, `/register` | เข้าสู่ระบบ / สมัคร (ต้องใช้ invite code) |
+| `/onboarding` | ใส่ invite code + ตั้ง slug (ผู้ใช้ใหม่ทุกวิธีล็อกอิน) |
 | `/dashboard/*` | หลังบ้าน: tip page, profile, transactions, overlays |
+| `/admin/*` | Admin CMS: จัดการ invite code, ดูผู้ใช้ (role `admin`) |
 | `/{slug}` | หน้า Tip สาธารณะ |
 | `/{slug}/gift` | หน้า Gift (เฟส 3) |
 | `/{slug}/result?d={donationId}` | ผลการชำระ (สำเร็จ/ไม่สำเร็จ) |
@@ -113,9 +115,16 @@ interface TtsProvider {                                        // เฟส 2
 
 ## 4. Data model (D1 / Drizzle)
 
-ตารางของ Better Auth (`user`, `session`, `account`, `verification`) สร้างตาม schema ของ library (+ `username`)
+ตารางของ Better Auth (`user`, `session`, `account`, `verification`) สร้างตาม schema ของ library (+ `username`, + `role` ('admin'|'streamer') ผ่าน admin plugin)
 
 ```
+invite_code             สร้าง/จัดการจาก Admin CMS
+  code PK, note, max_uses INT (NULL = ไม่จำกัด), used_count INT DEFAULT 0,
+  expires_at NULL, disabled_at NULL, created_by FK user, created_at
+
+invite_redemption
+  user_id PK/FK (1 คนใช้ได้ 1 ครั้ง), code FK, redeemed_at
+
 streamer_profile        1:1 user
   user_id PK/FK, slug UNIQUE, created_at
 
@@ -170,10 +179,21 @@ custom_profanity_word   (เฟส 2)
 ## 5. Auth และความปลอดภัย
 
 ### Auth
-- **Local:** username + password (username plugin); สมัครต้องมี `INVITE_CODE` ตรงกับ env
+- **Local:** username + password (username plugin); ฟอร์มสมัครมีช่อง invite code
 - **Google:** OAuth จริง (Google Cloud โหมด Testing, ≤100 test users); อีเมลตรงกับบัญชีเดิม → ผูกบัญชีเดียวกัน
 - **Streamlabs:** `genericOAuth` — authorize/token/userinfo URL, client id/secret มาจาก env; ตอนนี้ชี้ `/mock/streamlabs/*` (หน้าจำลองการอนุญาต ให้เลือก/กรอกชื่อผู้ใช้ Streamlabs ปลอม)
-- ผู้ใช้ใหม่ที่ล็อกอินครั้งแรกถูกพาไปตั้ง `slug` ก่อนเข้า dashboard
+- **Onboarding (`/onboarding`):** ผู้ใช้ที่ยังไม่มี `invite_redemption` หรือ `streamer_profile` ถูกบังคับเข้าหน้านี้ก่อนเข้า dashboard ทุกครั้ง (middleware)
+  1. ใส่ invite code (ข้ามได้ถ้าสมัคร local และใส่โค้ดถูกแล้วตอนสมัคร) — ใช้กับ **ทุกวิธีล็อกอิน** รวม Google/Streamlabs เพราะ OAuth สร้างบัญชีได้โดยไม่ผ่านฟอร์มสมัคร
+  2. ตั้ง `slug`
+- **Redeem invite code:** ตรวจ `disabled_at IS NULL`, ยังไม่หมดอายุ, `used_count < max_uses` → เพิ่ม `used_count` แบบมีเงื่อนไข (`UPDATE ... WHERE used_count < max_uses`) + insert `invite_redemption` ใน D1 batch เดียว กันการใช้เกินโควตาเมื่อสมัครพร้อมกัน; โค้ดไม่ถูกต้องตอบข้อความเดียวกันทุกกรณี (ไม่บอกว่าผิดเพราะอะไร) + rate limit ต่อ IP
+- **Admin:** role `admin` เท่านั้นเข้า `/admin/*` ได้ (ตรวจทั้ง middleware และทุก API); admin คนแรกสร้างด้วยสคริปต์ `pnpm admin:promote <username>` (รัน `wrangler d1 execute` ทั้ง local/remote) — ไม่มีทางเป็น admin ผ่านเว็บเอง; admin ข้าม invite code ได้
+
+### Admin CMS (`/admin`, เฟส 1)
+- **Invite codes:** ตาราง (โค้ด, หมายเหตุ, ใช้แล้ว/โควตา, วันหมดอายุ, สถานะ, สร้างเมื่อ)
+  - สร้างโค้ด: สุ่มอัตโนมัติ (8 ตัว A–Z0–9 ไม่มีตัวที่สับสน เช่น O/0, I/1) หรือพิมพ์เอง (`^[A-Z0-9-]{4,32}$`, เก็บเป็นตัวพิมพ์ใหญ่), ตั้งหมายเหตุ, โควตา, วันหมดอายุ
+  - ปิด/เปิดโค้ด (soft disable — ไม่ลบเพื่อเก็บประวัติ), คัดลอกโค้ด/ลิงก์สมัคร `/register?code=XXXX`
+  - ดูรายชื่อผู้ใช้ที่ใช้โค้ดนั้น
+- **Users (อ่านอย่างเดียว):** รายชื่อผู้ใช้, slug, วิธีล็อกอิน, โค้ดที่ใช้, วันที่สมัคร
 
 ### ความปลอดภัย
 - **Overlay token:** สุ่ม 32 bytes (base64url); reset → ออก token ใหม่ + DO ปิด socket ของ token เก่า (socket แนบ token ไว้ใน attachment)
@@ -207,6 +227,7 @@ tippaw/
 ├─ wrangler.jsonc             bindings: DB (D1), STREAMER_ROOM (DO), RATE_LIMITER, vars
 ├─ open-next.config.ts
 ├─ drizzle/                   migrations
+├─ scripts/admin-promote.ts   ตั้ง role admin ผ่าน wrangler d1 execute
 ├─ public/presets/sounds/     เสียง preset ของ alert
 ├─ src/
 │  ├─ app/                    routes: (auth), dashboard, [slug], overlay, api, mock
@@ -221,6 +242,7 @@ tippaw/
 │  │  ├─ alerts/              select-variant.ts, render-template.ts, build-event.ts
 │  │  ├─ donations/           create-donation.ts, handle-payment-event.ts
 │  │  ├─ overlays/            token.ts, settings-schemas.ts
+│  │  ├─ invites/             generate-code.ts, redeem.ts, admin CRUD
 │  │  └─ moderation/          (เฟส 2)
 │  └─ overlay/                ฝั่ง client: ws-client.ts, queue.ts, AlertPlayer.tsx
 └─ tests/
@@ -240,7 +262,8 @@ API route ทำแค่: ตรวจ session → ตรวจ input (Zod) →
   - webhook failed → donation `failed`, ไม่ publish
   - reset token → socket เก่าถูกปิด, token เก่าเชื่อมใหม่ไม่ได้
   - ยอดต่ำกว่าขั้นต่ำ → ไม่ publish alert
-- **E2E (Playwright, `MOCK_MODE=true`):** สมัครด้วย invite code → ตั้ง slug → เปิด overlay URL ในแท็บหนึ่ง → อีกแท็บโดเนทที่ `/{slug}` → กด "จำลองสำเร็จ" → ตรวจ alert ใน overlay + หน้า result + รายการในธุรกรรม → กด alert ซ้ำ → alert แสดงอีกครั้ง
+- **Invite code (integration):** โค้ดถูก/ผิด/หมดอายุ/ถูกปิด/เต็มโควตา; redeem พร้อมกัน 2 คนบนโควตาเหลือ 1 → สำเร็จ 1 คน; ผู้ใช้ OAuth ที่ยังไม่ redeem เข้า dashboard ไม่ได้; non-admin เรียก `/admin` API → 403
+- **E2E (Playwright, `MOCK_MODE=true`):** admin สร้าง invite code ใน CMS → สมัครด้วยโค้ดนั้น → ตั้ง slug → เปิด overlay URL ในแท็บหนึ่ง → อีกแท็บโดเนทที่ `/{slug}` → กด "จำลองสำเร็จ" → ตรวจ alert ใน overlay + หน้า result + รายการในธุรกรรม → กด alert ซ้ำ → alert แสดงอีกครั้ง
 
 ## 9. แผนเฟส
 
@@ -254,7 +277,8 @@ API route ทำแค่: ตรวจ session → ตรวจ input (Zod) →
 ## 10. ขอบเขตเฟส 1
 
 **รวม:**
-- Auth: local (+invite code), Google จริง, Streamlabs mock; หน้าตั้ง slug ครั้งแรก
+- Auth: local, Google จริง, Streamlabs mock; หน้า onboarding (invite code + slug)
+- Admin CMS: จัดการ invite code (สร้าง/ปิด/โควตา/หมดอายุ/ดูผู้ใช้โค้ด), รายชื่อผู้ใช้; สคริปต์ `admin:promote`
 - Profile: แก้ slug; ผูกช่องทางรับเงิน mock (กด "เชื่อมต่อ" → `active`); ถ้ายังไม่ active หน้า Tip แสดง "ยังไม่เปิดรับโดเนท"
 - Tip page settings (พื้นฐาน): ชื่อช่อง, ลิงก์หลายช่องทาง, ข้อความสำเร็จ/ไม่สำเร็จ
 - หน้า Tip สาธารณะ: แสดงชื่อช่อง + ลิงก์, ฟอร์ม ชื่อ + checkbox จดจำชื่อ + ข้อความ + ยอด → ชำระ
@@ -311,7 +335,6 @@ API route ทำแค่: ตรวจ session → ตรวจ input (Zod) →
 | `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` | Better Auth |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth |
 | `STREAMLABS_CLIENT_ID`, `STREAMLABS_CLIENT_SECRET`, `STREAMLABS_AUTHORIZE_URL`, `STREAMLABS_TOKEN_URL`, `STREAMLABS_USERINFO_URL` | Streamlabs (mock/จริง) |
-| `INVITE_CODE` | รหัสเชิญสำหรับสมัคร |
 | `MOCK_MODE` | `true` = เปิด mock routes + ใช้ MockPaymentProvider |
 | `PAYMENT_PROVIDER` | `mock` \| `stripe` |
 | `MOCK_WEBHOOK_SECRET` | เซ็น webhook ของ mock |
