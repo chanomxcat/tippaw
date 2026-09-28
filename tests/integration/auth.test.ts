@@ -102,6 +102,67 @@ describe("createAuth", () => {
     ).rejects.toThrow();
   });
 
+  it("rejects credential sign-up with a non-placeholder email (pre-hijack guard)", async () => {
+    const deps = makeDeps();
+    const auth = createAuth(deps.env, deps.db);
+    const username = uniqueName("hijack");
+    const email = `${username}@gmail.com`;
+    await expect(
+      auth.api.signUpEmail({ body: { email, username, password: "password123", name: username } }),
+    ).rejects.toThrow();
+    const rows = await deps.db.select().from(user).where(eq(user.email, email));
+    expect(rows).toHaveLength(0);
+  });
+
+  it("rejects credential sign-up via HTTP with a non-placeholder email", async () => {
+    const deps = makeDeps();
+    const auth = createAuth(deps.env, deps.db);
+    const username = uniqueName("hijackhttp");
+    const res = await auth.handler(
+      new Request("http://localhost:8787/api/auth/sign-up/email", {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: "http://localhost:8787" },
+        body: JSON.stringify({
+          email: `${username}@gmail.com`,
+          username,
+          password: "password123",
+          name: username,
+        }),
+      }),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects credential sign-up without a username", async () => {
+    const deps = makeDeps();
+    const auth = createAuth(deps.env, deps.db);
+    const name = uniqueName("nouser");
+    await expect(
+      auth.api.signUpEmail({
+        body: { email: placeholderEmail(name), password: "password123", name },
+      }),
+    ).rejects.toThrow();
+    const rows = await deps.db.select().from(user).where(eq(user.email, placeholderEmail(name)));
+    expect(rows).toHaveLength(0);
+  });
+
+  it("disables email sign-in (login is username-only)", async () => {
+    const deps = makeDeps();
+    const auth = createAuth(deps.env, deps.db);
+    const username = uniqueName("emailin");
+    await auth.api.signUpEmail({
+      body: { email: placeholderEmail(username), username, password: "password123", name: username },
+    });
+    const res = await auth.handler(
+      new Request("http://localhost:8787/api/auth/sign-in/email", {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: "http://localhost:8787" },
+        body: JSON.stringify({ email: placeholderEmail(username), password: "password123" }),
+      }),
+    );
+    expect(res.status).toBe(404);
+  });
+
   it("completes the mock Streamlabs OAuth flow in-process (no self-fetch)", async () => {
     const deps = makeDeps({ MOCK_MODE: "true" });
     const auth = createAuth(deps.env, deps.db);

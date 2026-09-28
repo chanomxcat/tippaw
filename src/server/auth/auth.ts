@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { admin, username } from "better-auth/plugins";
 import { genericOAuth, type GenericOAuthConfig } from "better-auth/plugins/generic-oauth";
 
@@ -13,6 +14,25 @@ import { hashPassword, verifyPassword } from "./pbkdf2";
 export function placeholderEmail(name: string): string {
   return `${name.toLowerCase()}@users.tippaw.invalid`;
 }
+
+/**
+ * Local (credential) accounts must be `username` + `placeholderEmail(username)`.
+ * Otherwise anyone could pre-register a victim's real email with their own
+ * password and have it auto-linked when the victim later signs in with Google.
+ * OAuth user creation does not go through /sign-up/email, so it is unaffected.
+ */
+const enforcePlaceholderSignUp = createAuthMiddleware(async (ctx) => {
+  if (ctx.path !== "/sign-up/email") return;
+  const body = (ctx.body ?? {}) as { username?: unknown; email?: unknown };
+  const username = typeof body.username === "string" ? body.username.trim() : "";
+  if (!username) {
+    throw new APIError("BAD_REQUEST", { message: "username_required" });
+  }
+  const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  if (email !== placeholderEmail(username)) {
+    throw new APIError("BAD_REQUEST", { message: "invalid_email" });
+  }
+});
 
 function streamlabsConfig(env: AppEnv): GenericOAuthConfig | null {
   if (isMockMode(env)) {
@@ -59,6 +79,9 @@ export function createAuth(env: AppEnv, db: Db) {
     baseURL: env.BETTER_AUTH_URL,
     secret: env.BETTER_AUTH_SECRET,
     database: drizzleAdapter(db, { provider: "sqlite", schema }),
+    // Login is username-only; email sign-in would bypass that.
+    disabledPaths: ["/sign-in/email"],
+    hooks: { before: enforcePlaceholderSignUp },
     advanced: {
       database: { generateId: () => crypto.randomUUID() },
     },
