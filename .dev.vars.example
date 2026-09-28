@@ -1,0 +1,16 @@
+# Copy this file to `.dev.vars` and fill in real values for local development.
+# `.dev.vars` is gitignored and must never be committed.
+
+BETTER_AUTH_SECRET=change-me-to-a-random-secret
+BETTER_AUTH_URL=http://localhost:8787
+
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+STREAMLABS_CLIENT_ID=
+STREAMLABS_CLIENT_SECRET=
+STREAMLABS_AUTHORIZE_URL=https://streamlabs.com/api/v2.0/authorize
+STREAMLABS_TOKEN_URL=https://streamlabs.com/api/v2.0/token
+STREAMLABS_USERINFO_URL=https://streamlabs.com/api/v2.0/user
+
+MOCK_WEBHOOK_SECRET=dev-mock-webhook-secret

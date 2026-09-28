@@ -1,0 +1,36 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+next-env.d.ts
+
+# opennextjs-cloudflare build output
+.open-next/
+
+# wrangler
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# testing
+coverage/
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
+
+# env files
+.env
+.env*.local
+
+# vercel (unused, but keep out just in case)
+.vercel
+
+# typescript
+*.tsbuildinfo
+
+# superpowers workflow scratch space
+.superpowers/

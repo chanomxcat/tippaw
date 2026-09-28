@@ -1,0 +1,51 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tippaw",
+  "main": "worker.ts",
+  "compatibility_date": "2026-09-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "tippaw-db",
+      "database_id": "<ใส่หลังสร้าง>",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "STREAMER_ROOM",
+        "class_name": "StreamerRoom"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["StreamerRoom"]
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "DONATION_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 10, "period": 60 }
+    },
+    {
+      "name": "INVITE_RATE_LIMITER",
+      "namespace_id": "1002",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ],
+  "vars": {
+    "MOCK_MODE": "true",
+    "PAYMENT_PROVIDER": "mock",
+    "MIN_DONATION_THB": "10",
+    "MAX_DONATION_THB": "10000"
+  }
+}
