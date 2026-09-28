@@ -1,4 +1,4 @@
-import { env } from "cloudflare:test";
+import { SELF, env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
 import { describe, expect, it, vi } from "vitest";
 
@@ -34,11 +34,48 @@ async function readDonationRow(deps: Deps, donationId: string) {
   return row;
 }
 
+/** Connects to a streamer's realtime overlay room, same as donations.test.ts. */
+async function connect(token: string) {
+  const response = await SELF.fetch(`http://x/api/realtime/${token}`, {
+    headers: { Upgrade: "websocket" },
+  });
+  expect(response.status).toBe(101);
+  const ws = response.webSocket;
+  if (!ws) throw new Error("expected a webSocket on the 101 response");
+  ws.accept();
+
+  const queue: string[] = [];
+  ws.addEventListener("message", (event) => {
+    queue.push(event.data as string);
+  });
+
+  return {
+    ws,
+    async next(timeoutMs = 2000): Promise<Record<string, unknown>> {
+      const start = Date.now();
+      while (queue.length === 0) {
+        if (Date.now() - start > timeoutMs) {
+          throw new Error("timed out waiting for a socket message");
+        }
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      }
+      return JSON.parse(queue.shift()!);
+    },
+    async expectNone(waitMs = 150): Promise<void> {
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+      if (queue.length > 0) {
+        throw new Error(`expected no message, got: ${queue[0]}`);
+      }
+    },
+  };
+}
+
 describe("runSimulatedPayment", () => {
-  it("never calls fetch, marks the donation paid, and is idempotent on replay", async () => {
+  it("never calls fetch, marks the donation paid, publishes the alert exactly once, and is idempotent on replay", async () => {
     const deps = makeDeps();
     const provider = makeProvider(deps);
     const streamer = await seedStreamer(deps.db);
+    const socket = await connect(streamer.token);
 
     const created = await createDonation(deps, provider, {
       slug: streamer.slug,
@@ -54,15 +91,22 @@ describe("runSimulatedPayment", () => {
 
     const result = await runSimulatedPayment(deps, sessionId, "succeeded");
     expect(fetchSpy).not.toHaveBeenCalled();
-    expect(result).toEqual({ redirectTo: `/${streamer.slug}/result?d=${created.donationId}` });
+    expect(result).toEqual({ ok: true, redirectTo: `/${streamer.slug}/result?d=${created.donationId}` });
 
     const status = await getDonationStatus(deps, created.donationId);
     expect(status?.status).toBe("paid");
 
-    // Replay: still paid, no error, no second fetch call either.
+    // The webhook path publishes an alert + donation.paid, exactly once.
+    const alertMessage = await socket.next();
+    expect(alertMessage.type).toBe("alert");
+    const paidMessage = await socket.next();
+    expect(paidMessage.type).toBe("donation.paid");
+
+    // Replay: still paid, no error, no second fetch call, and no second alert.
     const second = await runSimulatedPayment(deps, sessionId, "succeeded");
     expect(fetchSpy).not.toHaveBeenCalled();
-    expect(second).toEqual({ redirectTo: `/${streamer.slug}/result?d=${created.donationId}` });
+    expect(second).toEqual({ ok: true, redirectTo: `/${streamer.slug}/result?d=${created.donationId}` });
+    await socket.expectNone();
 
     const statusAfterReplay = await getDonationStatus(deps, created.donationId);
     expect(statusAfterReplay?.status).toBe("paid");
@@ -75,5 +119,33 @@ describe("runSimulatedPayment", () => {
 
     const result = await runSimulatedPayment(deps, `mcs_${randomId()}`, "succeeded");
     expect(result).toBeNull();
+  });
+
+  it("returns an error result and leaves the donation pending when applying the webhook fails", async () => {
+    const deps = makeDeps();
+    const provider = makeProvider(deps);
+    const streamer = await seedStreamer(deps.db);
+
+    const created = await createDonation(deps, provider, {
+      slug: streamer.slug,
+      donorName: "แมว",
+      message: "",
+      amountThb: 100,
+    });
+    if (!created.ok) throw new Error("setup failed");
+    const row = await readDonationRow(deps, created.donationId);
+    const sessionId = row.providerSessionId!;
+
+    // Force handleWebhookRequest to fail internally: the stripe provider's
+    // parseWebhook is an unimplemented stub that throws, so handling the
+    // (still mock-signed) request comes back non-ok — the same shape a real
+    // signature/D1 failure would take, without needing to fake either.
+    const brokenDeps: Deps = { ...deps, env: { ...deps.env, PAYMENT_PROVIDER: "stripe" } };
+
+    const result = await runSimulatedPayment(brokenDeps, sessionId, "succeeded");
+    expect(result).toEqual({ ok: false, error: "simulate_failed" });
+
+    const status = await getDonationStatus(deps, created.donationId);
+    expect(status?.status).toBe("pending");
   });
 });

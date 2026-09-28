@@ -4,7 +4,9 @@ import { handleWebhookRequest } from "@/server/donations/handle-payment-event";
 import { buildMockWebhookRequest } from "@/server/payments/mock";
 import { getPaymentProvider } from "@/server/payments";
 
-export type SimulatedPaymentResult = { redirectTo: string };
+export type SimulatedPaymentResult =
+  | { ok: true; redirectTo: string }
+  | { ok: false; error: "simulate_failed" };
 
 /**
  * Applies a simulated mock-checkout outcome to the donation behind
@@ -13,6 +15,13 @@ export type SimulatedPaymentResult = { redirectTo: string };
  * `buildMockWebhookRequest` and hands it straight to `handleWebhookRequest`,
  * the same path a real provider's webhook takes, so the flow stays
  * idempotent and exercises the real alert-publishing code.
+ *
+ * `handleWebhookRequest` never throws — it turns a bad signature (400) or
+ * any internal error (500) into a JSON error `Response` instead. Left
+ * unchecked, that failure would be invisible here: the donation would stay
+ * `pending` while the caller still reported success and sent the donor to
+ * the result page to poll for up to 5 minutes. `res.ok` is checked so a
+ * failure comes back as `{ ok: false, error: "simulate_failed" }` instead.
  *
  * Returns `null` when `sessionId` doesn't match any donation (unknown or
  * already-consumed session), so the caller (the `simulatePayment` server
@@ -33,10 +42,13 @@ export async function runSimulatedPayment(
     outcome,
     baseUrl: deps.env.BETTER_AUTH_URL,
   });
-  await handleWebhookRequest(deps, provider, req);
+  const res = await handleWebhookRequest(deps, provider, req);
+  if (!res.ok) {
+    return { ok: false, error: "simulate_failed" };
+  }
 
   const status = await getDonationStatus(deps, donationRow.id);
   if (!status) return null;
 
-  return { redirectTo: `/${status.slug}/result?d=${donationRow.id}` };
+  return { ok: true, redirectTo: `/${status.slug}/result?d=${donationRow.id}` };
 }
