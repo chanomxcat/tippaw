@@ -1,15 +1,45 @@
+import { execFileSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { expect, test } from "@playwright/test";
 
 import { onboard, registerUser } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
+const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+const tsxBin = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
+
+/**
+ * Seeds a fresh single-use invite code directly in D1, own code so this spec
+ * doesn't collide with auth.spec.ts over the one `E2E-BOOT` code seeded by
+ * tests/e2e/global-setup.ts. Playwright doesn't guarantee file execution
+ * order is alphabetical across every environment/filesystem, and this spec
+ * hardcoding the same single-use "E2E-BOOT" code as auth.spec.ts's first
+ * test was a real bug, not just a timing flake: whichever of the two specs
+ * happened to run second always found the code already consumed and failed
+ * outright with "invite code ไม่ถูกต้อง" (seen with a `locator.fill` timeout
+ * further down, waiting for a "Slug" field on a page that had actually
+ * stayed on `/register` with that error banner) — see the other specs
+ * (admin/alert-settings/donate/overlay/transactions), which all already
+ * mint their own code this way.
+ */
+function bootstrapInvite(code: string): void {
+  execFileSync(
+    process.execPath,
+    [tsxBin, path.join(rootDir, "scripts", "admin-bootstrap-invite.ts"), "--code", code],
+    { stdio: "inherit", cwd: rootDir },
+  );
+}
+
 const USERNAME = "e2esettings";
 const PASSWORD = "password12345";
 
 test.describe("profile + tip page settings", () => {
   test("onboards, edits tip page settings (persisted across reload), and connects payout", async ({ page }) => {
-    await registerUser(page, { username: USERNAME, password: PASSWORD, inviteCode: "E2E-BOOT" });
+    bootstrapInvite("SETTINGS-BOOT-1");
+    await registerUser(page, { username: USERNAME, password: PASSWORD, inviteCode: "SETTINGS-BOOT-1" });
     await onboard(page, "e2e-settings-cat");
     await expect(page).toHaveURL(/\/dashboard\/transactions$/);
 

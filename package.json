@@ -12,6 +12,7 @@
     "cf-typegen": "wrangler types",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply tippaw-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply tippaw-db --remote",
     "admin:bootstrap-invite": "tsx scripts/admin-bootstrap-invite.ts",
     "admin:promote": "tsx scripts/admin-promote.ts",
     "test:e2e": "playwright test"

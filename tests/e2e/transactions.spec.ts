@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { expect, test } from "@playwright/test";
 
-import { onboard, registerUser } from "./helpers";
+import { onboard, registerUser, simulateMockCheckout } from "./helpers";
 
 // Serial: a single long scenario against the shared local D1 database for
 // this `playwright test` run (see admin.spec.ts for the same reasoning).
@@ -51,8 +51,7 @@ test.describe("transactions page + alert replay", () => {
     await viewerPage.getByLabel("จำนวนเงิน (บาท)").fill("100");
     await viewerPage.getByRole("button", { name: "ชำระเงิน" }).click();
     await expect(viewerPage).toHaveURL(/\/mock\/checkout\//);
-    await viewerPage.getByRole("button", { name: "จำลองชำระสำเร็จ" }).click();
-    await expect(viewerPage).toHaveURL(new RegExp(`/${SLUG}/result\\?d=`));
+    await simulateMockCheckout(viewerPage, "succeeded", new RegExp(`/${SLUG}/result\\?d=`));
 
     // A second donation that fails payment — must never show up in the transactions list.
     await viewerPage.goto(`/${SLUG}`);
@@ -60,8 +59,7 @@ test.describe("transactions page + alert replay", () => {
     await viewerPage.getByLabel("จำนวนเงิน (บาท)").fill("50");
     await viewerPage.getByRole("button", { name: "ชำระเงิน" }).click();
     await expect(viewerPage).toHaveURL(/\/mock\/checkout\//);
-    await viewerPage.getByRole("button", { name: "จำลองชำระไม่สำเร็จ" }).click();
-    await expect(viewerPage).toHaveURL(new RegExp(`/${SLUG}/result\\?d=`));
+    await simulateMockCheckout(viewerPage, "failed", new RegExp(`/${SLUG}/result\\?d=`));
 
     await viewerContext.close();
 

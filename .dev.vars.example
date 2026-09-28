@@ -1,16 +1,43 @@
 # Copy this file to `.dev.vars` and fill in real values for local development.
 # `.dev.vars` is gitignored and must never be committed.
+#
+# Every variable from the design spec (§12 "Environment variables") is listed
+# below, grouped the same way. Values here are mock-mode-safe defaults —
+# see README.md for which ones you must replace with real secrets before
+# switching MOCK_MODE off / PAYMENT_PROVIDER to "stripe".
 
+# --- Better Auth ---
 BETTER_AUTH_SECRET=change-me-to-a-random-secret
 BETTER_AUTH_URL=http://localhost:8787
 
+# --- Google OAuth (leave blank to keep the "เข้าสู่ระบบด้วย Google" button disabled locally) ---
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 
-STREAMLABS_CLIENT_ID=
-STREAMLABS_CLIENT_SECRET=
-STREAMLABS_AUTHORIZE_URL=https://streamlabs.com/api/v2.0/authorize
-STREAMLABS_TOKEN_URL=https://streamlabs.com/api/v2.0/token
-STREAMLABS_USERINFO_URL=https://streamlabs.com/api/v2.0/user
+# --- Streamlabs OAuth (mock/real — see README.md "สลับไปใช้ของจริง") ---
+STREAMLABS_CLIENT_ID=mock-client
+STREAMLABS_CLIENT_SECRET=mock-secret
+STREAMLABS_AUTHORIZE_URL=http://localhost:8787/mock/streamlabs/authorize
+STREAMLABS_TOKEN_URL=http://localhost:8787/api/mock/streamlabs/token
+STREAMLABS_USERINFO_URL=http://localhost:8787/api/mock/streamlabs/userinfo
 
+# --- Mock mode (payments + Streamlabs) ---
+# "true" = /mock/* and /api/mock/* routes are enabled and MockPaymentProvider
+# is used instead of Stripe. Keep this "true" for local development.
+MOCK_MODE=true
+# "mock" | "stripe" — which payment provider src/server/payments/index.ts picks.
+PAYMENT_PROVIDER=mock
 MOCK_WEBHOOK_SECRET=dev-mock-webhook-secret
+
+# --- Stripe (phase 1: PAYMENT_PROVIDER=stripe is wired to a provider stub
+# only — see src/server/payments/stripe.ts — so these aren't exercised yet) ---
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+
+# --- Azure AI Speech (phase 2 — alert TTS; unused in phase 1) ---
+AZURE_SPEECH_KEY=
+AZURE_SPEECH_REGION=
+
+# --- Donation amount bounds (THB, whole baht) ---
+MIN_DONATION_THB=10
+MAX_DONATION_THB=10000
