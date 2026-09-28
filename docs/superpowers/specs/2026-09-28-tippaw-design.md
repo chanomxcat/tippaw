@@ -24,6 +24,7 @@ TipPaw คือเว็บรับโดเนทสำหรับสตร�
 |---|---|---|
 | Hosting | Cloudflare Workers ผ่าน `@opennextjs/cloudflare` | `next-on-pages` เลิกพัฒนาแล้ว; OpenNext รัน Node.js runtime, ฟีเจอร์ Next.js ครบกว่า |
 | Framework | Next.js (App Router) + TypeScript | frontend + API ใน repo เดียว |
+| UI | MUI + Minimal ฟรี (port จาก Vite), ฟอนต์ Prompt, palette ชมพู–ม่วง–คราม (ข้อ 11) | template สำเร็จรูป, ฟรี (MIT) |
 | Database | Cloudflare D1 + Drizzle ORM | อยู่ใน Cloudflare, ฟรีสำหรับ MVP |
 | Realtime | Durable Object `StreamerRoom` (1 instance/สตรีมเมอร์) + WebSocket Hibernation API | Workers ถือ WebSocket เองไม่ได้; DO เป็นห้องกระจาย event |
 | Auth | Better Auth (username plugin, Google, genericOAuth สำหรับ Streamlabs) | รองรับทั้ง 3 วิธี, รันบน Workers ได้ |
@@ -210,6 +211,7 @@ tippaw/
 ├─ src/
 │  ├─ app/                    routes: (auth), dashboard, [slug], overlay, api, mock
 │  ├─ components/
+│  ├─ ui/minimal/             theme, layouts, components ที่ port จาก Minimal ฟรี
 │  ├─ server/
 │  │  ├─ env.ts               อ่าน bindings/vars ผ่าน getCloudflareContext
 │  │  ├─ db/                  schema.ts, client.ts
@@ -269,7 +271,40 @@ API route ทำแค่: ตรวจ session → ตรวจ input (Zod) →
 
 **ไม่รวม (เฟสถัดไป):** ทุกอย่างในตารางเฟส 2–4
 
-## 11. Environment variables
+## 11. UI & Design system
+
+### Template และ component library
+- ใช้ **Minimal แบบฟรี** ([minimal-ui-kit/material-kit-react](https://github.com/minimal-ui-kit/material-kit-react), MIT) บน **MUI**
+- ตัวฟรีเป็น **Vite + React Router** (เวอร์ชัน Next.js มีเฉพาะ Pro) → **port** เข้า Next.js App Router:
+  - คัดลอก `theme/`, `layouts/` (dashboard: nav, header), `components/` (iconify, label, scrollbar ฯลฯ) มาไว้ที่ `src/ui/minimal/` พร้อมใส่ LICENSE/attribution
+  - เปลี่ยน React Router (`Link`, `useNavigate`, `useLocation`) → `next/link`, `next/navigation`
+  - ใช้ `@mui/material-nextjs` (`AppRouterCacheProvider`) สำหรับ Emotion SSR; component ที่ใช้ MUI เป็น Client Component ตามจำเป็น
+  - ส่วนที่ template ฟรีไม่มี (ฟอร์มขั้นสูง, color picker, uploader แบบ URL ฯลฯ) เขียนเพิ่มด้วย MUI ในสไตล์เดียวกัน
+  - ตัดหน้าตัวอย่าง (products, blog, users) ทิ้ง
+- ใช้ MUI กับ **dashboard, หน้า auth, หน้า Tip, หน้า Gift, หน้า mock** เท่านั้น
+- **Overlay ไม่ใช้ MUI** — React + CSS ล้วน (CSS variables จาก settings) เพื่อให้โหลดเร็วและเบาใน OBS browser source; พื้นหลังโปร่งใส
+- โหมดมืดของ dashboard: ไม่อยู่ในขอบเขต MVP (template ฟรีไม่มี)
+
+### Palette
+
+| Token | Hex | ใช้กับ |
+|---|---|---|
+| `primary.lighter` | `#E7D6E3` | พื้นหลังจาง, selected state (ค่าคำนวณจาก `#AF719D`) |
+| `primary.light` | `#AF719D` | hover, ไอคอนรอง |
+| `primary.main` | `#8B639B` | ปุ่มหลัก, ลิงก์, active nav (ตัวอักษรขาว ~4.8:1) |
+| `primary.dark` | `#403D88` | หัวข้อ, sidebar, ข้อความเน้น (ตัวอักษรขาว ~9.4:1) |
+| `primary.darker` | `#2A2860` | pressed state (ค่าคำนวณจาก `#403D88`) |
+| `secondary.main` | `#F8B2B2` | highlight, badge, hero/การ์ดเด่นบนหน้า Tip |
+| `secondary.contrastText` | `#403D88` | ตัวอักษรบนพื้นชมพู (ห้ามใช้ตัวขาวบน `#F8B2B2`) |
+
+สีสถานะ (success/warning/error/info) และ grey ใช้ค่าเดิมของ Minimal
+
+### Typography
+- ฟอนต์ **Prompt** (Google Fonts, weight 100–900 + italic, subset `thai` + `latin`) โหลดผ่าน `next/font/google` (self-host ตอน build) แทนฟอนต์เดิมของ template — ตั้งเป็น `typography.fontFamily` ของ MUI theme
+- ค่าเริ่มต้น: body 400, หัวข้อ 600–700
+- Overlay ใช้ Prompt เป็นค่าเริ่มต้น; เฟส 2 เลือก Google Font อื่นได้
+
+## 12. Environment variables
 
 | ชื่อ | ใช้ทำอะไร |
 |---|---|
