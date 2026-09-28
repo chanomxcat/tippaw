@@ -1,31 +1,11 @@
-import { execFileSync } from "node:child_process";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { expect, test } from "@playwright/test";
 
-import { onboard, promoteToAdmin, registerUser } from "./helpers";
+import { bootstrapInvite, onboard, promoteToAdmin, registerUser } from "./helpers";
 
 // Serial: a single long scenario that logs in/out as different users against
 // the one local D1 database shared across this whole `playwright test` run
 // (seeded once by tests/e2e/global-setup.ts, via webServer.command).
 test.describe.configure({ mode: "serial" });
-
-const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const tsxBin = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
-
-/**
- * Seeds a fresh single-use invite code directly in D1 (same script that
- * seeds `E2E-BOOT`), so this spec doesn't compete with auth.spec.ts for the
- * one `E2E-BOOT` code shared across the whole test run.
- */
-function bootstrapInvite(code: string): void {
-  execFileSync(
-    process.execPath,
-    [tsxBin, path.join(rootDir, "scripts", "admin-bootstrap-invite.ts"), "--code", code],
-    { stdio: "inherit", cwd: rootDir },
-  );
-}
 
 const ADMIN_USERNAME = "e2eadmin";
 const STREAMER_USERNAME = "e2ecatvip";

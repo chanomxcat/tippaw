@@ -28,8 +28,8 @@ cp .dev.vars.example .dev.vars
 
 สองโหมด แล้วแต่ว่าต้องการทดสอบอะไร:
 
-- **`npm run dev`** — Next dev server ธรรมดา (เร็ว, hot reload) พอสำหรับแก้ UI ทั่วไป แต่ **Durable Object (realtime alert ผ่าน WebSocket) และ D1 bindings จริงไม่ทำงาน** ในโหมดนี้
-- **`npm run preview`** — build ด้วย OpenNext แล้วรันผ่าน `wrangler dev` (จำลอง Workers runtime จริงในเครื่อง: D1 local, Durable Object, rate limiting) — ใช้โหมดนี้เวลาต้องทดสอบ overlay/alert แบบ end-to-end หรือก่อน deploy จริง ที่ `http://localhost:8787`
+- **`npm run dev`** — Next dev server ธรรมดา (เร็ว, hot reload) พอสำหรับแก้ UI ทั่วไป **D1 ใช้งานได้จริง** ในโหมดนี้ด้วย (ผ่าน `initOpenNextCloudflareForDev()` ใน `next.config.ts`) แต่ **Durable Object (realtime alert ผ่าน WebSocket) ยังไม่ทำงาน**
+- **`npm run preview`** — build ด้วย OpenNext แล้วรันผ่าน `wrangler dev` (จำลอง Workers runtime จริงในเครื่องครบทุกส่วน: D1 local, Durable Object, rate limiting) — ใช้โหมดนี้เวลาต้องทดสอบ overlay/alert แบบ end-to-end หรือก่อน deploy จริง ที่ `http://localhost:8787`
 
 ก่อนใช้ D1 ครั้งแรก (ทั้ง `dev` และ `preview`) ต้องสร้างตารางในเครื่องก่อน (ข้อ 5)
 
@@ -74,16 +74,29 @@ npm run admin:bootstrap-invite -- --remote
 #    /register?code=K7XQPWT2 -> ตั้ง username/password -> ตั้ง slug
 
 # 3) เลื่อน username ที่เพิ่งสมัครให้เป็น admin
-npm run admin:promote -- e2ecat --remote
+npm run admin:promote -- <username> --remote
 ```
 
 ทำงานกับฐานข้อมูล local ได้เหมือนกันโดยตัด `--remote` ออก (ใช้ตอนพัฒนา/ทดสอบ)
 
 จากนั้น admin คนนี้เข้า `/admin/invites` เพื่อสร้าง invite code เพิ่มให้สตรีมเมอร์คนอื่นได้เอง (ไม่ต้องใช้ CLI อีก)
 
-## 7. Secrets
+## 7. `BETTER_AUTH_URL` และ secrets
 
-`.dev.vars` ใช้แค่ตอนรัน local — ของจริงบน Cloudflare ต้องตั้งแยกด้วย `wrangler secret put` (ค่าที่ใส่จะไม่ปรากฏใน `wrangler.jsonc`/repo):
+**ก่อน deploy ต้องตั้ง `BETTER_AUTH_URL` ก่อนเสมอ** — ไม่ใช่ความลับ แต่ `wrangler.jsonc`'s `vars` ที่ commit ไว้มีแค่ `MOCK_MODE`/`PAYMENT_PROVIDER`/`MIN_DONATION_THB`/`MAX_DONATION_THB` (ค่าที่เหมือนกันทุกเครื่อง) ไม่มี `BETTER_AUTH_URL` เพราะขึ้นกับโดเมนที่ deploy จริงของแต่ละคน **ลืมขั้นตอนนี้แล้ว deploy ไปเลยจะได้ worker ที่ auth พัง (baseURL ผิด) และ URL ของ checkout/result/overlay เป็น `undefined/...`**
+
+โดเมนจะเป็นรูปแบบ `https://<worker-name>.<your-subdomain>.workers.dev` (`<worker-name>` คือ `name` ใน `wrangler.jsonc`, ปัจจุบันคือ `tippaw`; `<your-subdomain>` คือ workers.dev subdomain ของบัญชี Cloudflare — ดูได้จาก Cloudflare dashboard หรือรอดู URL ที่ `wrangler deploy` พิมพ์ออกมาหลัง deploy ครั้งแรกก็ได้) เลือกวิธีใดวิธีหนึ่ง:
+
+- เพิ่มเป็น `vars` ใน `wrangler.jsonc` (แก้ไฟล์นี้ในเครื่องตัวเอง เหมือนที่แก้ `database_id`):
+  ```jsonc
+  "vars": {
+    "BETTER_AUTH_URL": "https://tippaw.<your-subdomain>.workers.dev",
+    // ...ตัวแปรเดิม
+  }
+  ```
+- หรือตั้งเป็น secret แทน: `npx wrangler secret put BETTER_AUTH_URL`
+
+`.dev.vars` ใช้แค่ตอนรัน local — secrets ที่เหลือ (ความลับจริง) ต้องตั้งแยกด้วย `wrangler secret put` (ค่าที่ใส่จะไม่ปรากฏใน `wrangler.jsonc`/repo):
 
 ```bash
 npx wrangler secret put BETTER_AUTH_SECRET
@@ -94,8 +107,6 @@ npx wrangler secret put STREAMLABS_CLIENT_SECRET
 npx wrangler secret put MOCK_WEBHOOK_SECRET
 ```
 
-ตัวแปรที่ไม่ใช่ความลับ (`MOCK_MODE`, `PAYMENT_PROVIDER`, `MIN_DONATION_THB`, `MAX_DONATION_THB`) ตั้งผ่าน `vars` ใน `wrangler.jsonc` อยู่แล้ว ไม่ต้องใช้ `secret put`
-
 ### Google OAuth
 
 สร้าง OAuth client ใน Google Cloud Console (โหมด **Testing**, ≤100 test users พอสำหรับ MVP) แล้วตั้ง **Authorized redirect URI** เป็น:
@@ -104,7 +115,7 @@ npx wrangler secret put MOCK_WEBHOOK_SECRET
 ${BETTER_AUTH_URL}/api/auth/callback/google
 ```
 
-เช่น `https://tippaw.<your-subdomain>.workers.dev/api/auth/callback/google` — `BETTER_AUTH_URL` ต้องตรงกับโดเมนที่ deploy จริง (ตั้งใน `wrangler.jsonc` หรือ secret ก็ได้ แต่ต้องค่าเดียวกับที่ใช้จริง)
+เช่น `https://tippaw.<your-subdomain>.workers.dev/api/auth/callback/google` — ต้องตรงกับค่า `BETTER_AUTH_URL` ที่ตั้งไว้ข้างบนเป๊ะๆ
 
 ### Streamlabs
 

@@ -1,26 +1,10 @@
-import { execFileSync } from "node:child_process";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { expect, test } from "@playwright/test";
 
-import { onboard, registerUser, simulateMockCheckout } from "./helpers";
+import { bootstrapInvite, onboard, registerUser } from "./helpers";
 
 // Serial: a single long scenario against the shared local D1 database for
 // this `playwright test` run (see admin.spec.ts for the same reasoning).
 test.describe.configure({ mode: "serial" });
-
-const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const tsxBin = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
-
-/** Seeds a fresh single-use invite code directly in D1, own code so this spec doesn't collide with others. */
-function bootstrapInvite(code: string): void {
-  execFileSync(
-    process.execPath,
-    [tsxBin, path.join(rootDir, "scripts", "admin-bootstrap-invite.ts"), "--code", code],
-    { stdio: "inherit", cwd: rootDir },
-  );
-}
 
 const STREAMER_USERNAME = "e2etxncat";
 const PASSWORD = "password12345";
@@ -51,7 +35,8 @@ test.describe("transactions page + alert replay", () => {
     await viewerPage.getByLabel("จำนวนเงิน (บาท)").fill("100");
     await viewerPage.getByRole("button", { name: "ชำระเงิน" }).click();
     await expect(viewerPage).toHaveURL(/\/mock\/checkout\//);
-    await simulateMockCheckout(viewerPage, "succeeded", new RegExp(`/${SLUG}/result\\?d=`));
+    await viewerPage.getByRole("button", { name: "จำลองชำระสำเร็จ" }).click();
+    await expect(viewerPage).toHaveURL(new RegExp(`/${SLUG}/result\\?d=`));
 
     // A second donation that fails payment — must never show up in the transactions list.
     await viewerPage.goto(`/${SLUG}`);
@@ -59,7 +44,8 @@ test.describe("transactions page + alert replay", () => {
     await viewerPage.getByLabel("จำนวนเงิน (บาท)").fill("50");
     await viewerPage.getByRole("button", { name: "ชำระเงิน" }).click();
     await expect(viewerPage).toHaveURL(/\/mock\/checkout\//);
-    await simulateMockCheckout(viewerPage, "failed", new RegExp(`/${SLUG}/result\\?d=`));
+    await viewerPage.getByRole("button", { name: "จำลองชำระไม่สำเร็จ" }).click();
+    await expect(viewerPage).toHaveURL(new RegExp(`/${SLUG}/result\\?d=`));
 
     await viewerContext.close();
 

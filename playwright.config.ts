@@ -11,31 +11,25 @@ export default defineConfig({
   globalTeardown: "./tests/e2e/global-teardown.ts",
   // The local wrangler/OpenNext preview server can be slow on first
   // request (cold Worker compile), especially on Windows.
-  timeout: 90_000,
-  // Was flaky under a single failure locally (see scripts/e2e-warmup.ts for
-  // the cold-start root cause this and that script address together); a
-  // one-time retry in CI absorbs whatever's left after that fix, without
-  // masking a real regression by retrying locally too.
+  timeout: 60_000,
+  // A one-time retry in CI absorbs whatever genuine latency variance is
+  // left after the fixes below, without masking a real regression by
+  // retrying locally too.
   retries: process.env.CI ? 1 : 0,
-  // Traced a real flake here across several full-suite runs: the mock
-  // checkout's button round-trips through a Next.js server action
-  // (simulatePayment -> handleWebhookRequest: one or two cheap D1
-  // statements, no DO/crypto work on the "failed" path) and then a
-  // client-side `router.push` to the result page — normally well under a
-  // second. It occasionally blew even a 15s budget, but only ever in a
-  // full-suite run, at a different spec each time (donate.spec.ts,
-  // transactions.spec.ts, ...) and never when the same spec was re-run
-  // alone — i.e. it's not any one spec's bug, and scripts/e2e-warmup.ts's
-  // one-time cold-start fix doesn't reach it either. It tracks with
-  // sustained load on this single long-lived local wrangler/workerd
-  // process over a whole ~2.5-5 minute serial run (dozens of D1 writes,
-  // several WebSocket/Durable-Object connections from the overlay specs,
-  // one Worker isolate the entire time) rather than any single request
-  // being slow by itself. A genuinely broken flow still fails outright
-  // (the result page never appears, at any timeout), so widening this
-  // further doesn't hide a real regression — it buys margin for that
-  // occasional whole-process pause instead.
-  expect: { timeout: 30_000 },
+  // What actually caused the "mock-checkout" flake seen across several
+  // full-suite runs (donate.spec.ts, transactions.spec.ts, golden-path.spec.ts)
+  // was not slowness: with `stdout: "pipe"` below, a failing run's wrangler
+  // log showed the button's expected `POST /mock/checkout/<session>` never
+  // arriving at the server at all, at any timeout — a real hydration race
+  // (CheckoutActions.tsx's buttons were server-rendered enabled with only
+  // an `onClick`, so a click landing before React attached that handler did
+  // nothing). That's fixed at the source now (`useHydrated()` in
+  // src/ui/use-hydrated.ts keeps the button disabled — and thus unclickable
+  // by Playwright's own actionability wait — until hydration finishes); see
+  // CheckoutActions.tsx, TipForm.tsx, and ReplayButton.tsx. This is a small
+  // remaining margin for the ordinary latency of a real D1 write + Next.js
+  // render on a local dev server, not a workaround for that race.
+  expect: { timeout: 10_000 },
   use: {
     baseURL: "http://localhost:8787",
     trace: "retain-on-failure",

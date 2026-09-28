@@ -1,37 +1,18 @@
-import { execFileSync } from "node:child_process";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { expect, test } from "@playwright/test";
 
-import { onboard, registerUser } from "./helpers";
+import { bootstrapInvite, onboard, registerUser } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
-const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const tsxBin = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
-
-/**
- * Seeds a fresh single-use invite code directly in D1, own code so this spec
- * doesn't collide with auth.spec.ts over the one `E2E-BOOT` code seeded by
- * tests/e2e/global-setup.ts. Playwright doesn't guarantee file execution
- * order is alphabetical across every environment/filesystem, and this spec
- * hardcoding the same single-use "E2E-BOOT" code as auth.spec.ts's first
- * test was a real bug, not just a timing flake: whichever of the two specs
- * happened to run second always found the code already consumed and failed
- * outright with "invite code ไม่ถูกต้อง" (seen with a `locator.fill` timeout
- * further down, waiting for a "Slug" field on a page that had actually
- * stayed on `/register` with that error banner) — see the other specs
- * (admin/alert-settings/donate/overlay/transactions), which all already
- * mint their own code this way.
- */
-function bootstrapInvite(code: string): void {
-  execFileSync(
-    process.execPath,
-    [tsxBin, path.join(rootDir, "scripts", "admin-bootstrap-invite.ts"), "--code", code],
-    { stdio: "inherit", cwd: rootDir },
-  );
-}
+// This spec used to hardcode the same single-use "E2E-BOOT" code as
+// auth.spec.ts's first test (the one `tests/e2e/global-setup.ts` seeds).
+// Playwright doesn't guarantee file execution order is alphabetical across
+// every environment/filesystem, so whichever of the two specs happened to
+// run second always found the code already consumed and failed outright
+// with "invite code ไม่ถูกต้อง" (seen with a `locator.fill` timeout further
+// down, waiting for a "Slug" field on a page that had actually stayed on
+// `/register` with that error banner) — a real bug, not a timing flake.
+// Minting its own code, like every other spec already does, fixes it.
 
 const USERNAME = "e2esettings";
 const PASSWORD = "password12345";

@@ -1,24 +1,8 @@
-import { execFileSync } from "node:child_process";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { expect, test } from "@playwright/test";
 
-import { onboard, registerUser } from "./helpers";
+import { bootstrapInvite, onboard, registerUser } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
-
-const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const tsxBin = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
-
-/** Seeds a fresh single-use invite code directly in D1, own code so this spec doesn't collide with others. */
-function bootstrapInvite(code: string): void {
-  execFileSync(
-    process.execPath,
-    [tsxBin, path.join(rootDir, "scripts", "admin-bootstrap-invite.ts"), "--code", code],
-    { stdio: "inherit", cwd: rootDir },
-  );
-}
 
 const USERNAME = "e2ealertset";
 const PASSWORD = "password12345";

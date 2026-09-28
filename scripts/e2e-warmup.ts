@@ -2,20 +2,24 @@
  * Warms up the local `wrangler`/OpenNext preview server before Playwright
  * runs any real test.
  *
- * Root cause this works around: the preview server's very first request
- * pays a large one-time cost (V8/workerd compiling the whole OpenNext
- * worker bundle, plus first-time module instantiation for Better Auth,
- * Drizzle, and PBKDF2 password hashing) — on a cold Windows machine this
- * can run into tens of seconds. Playwright's own `webServer.url` readiness
- * check only waits for the root route to answer once, which does not
- * exercise any of that (there's no `page.tsx` doing DB/auth work at `/`,
- * only `/login`, `/register`, etc. do). The first *test* to hit one of
- * those routes (typically registering a user, which does a real invite
- * lookup + PBKDF2 hash + session write) was absorbing that cold-start cost
- * against its own 60s per-test timeout instead, which is where the
- * intermittent timeouts on `settings.spec.ts` / `transactions.spec.ts`
- * traced back to (see their traces: the timeout always lands on the first
- * `page.getByLabel(...).fill()` after a fresh navigation, never mid-test).
+ * What this works around: the preview server's very first request pays a
+ * one-time cost (V8/workerd compiling the whole OpenNext worker bundle,
+ * plus first-time module instantiation for Better Auth, Drizzle, and
+ * PBKDF2 password hashing) that later requests don't. Playwright's own
+ * `webServer.url` readiness check only waits for the root route to answer
+ * once, which doesn't exercise any of that (there's no `page.tsx` doing
+ * DB/auth work at `/` — only `/login`, `/register`, etc. do), so without
+ * this, the first *test* to hit one of those routes would pay that cost
+ * against its own per-test timeout instead.
+ *
+ * To be clear about what this script does and doesn't fix: two other,
+ * separate bugs used to also show up as apparent "flakiness" in this
+ * suite and are fixed elsewhere, not here — `settings.spec.ts` was
+ * reusing another spec's single-use invite code (an ordering bug, fixed by
+ * giving it its own code — see helpers.ts's `bootstrapInvite`), and the
+ * mock-checkout buttons had a real pre-hydration click race (fixed in the
+ * app itself via `useHydrated()`, see src/ui/use-hydrated.ts). This script
+ * only ever addressed the first-request compile cost described above.
  *
  * This script is run as a second Playwright `webServer` entry (see
  * playwright.config.ts), after the preview server's own entry is already

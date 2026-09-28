@@ -5,12 +5,15 @@ import { useState } from "react";
 import Button from "@mui/material/Button";
 import Snackbar from "@mui/material/Snackbar";
 
+import { useHydrated } from "@/ui/use-hydrated";
+
 export type ReplayButtonProps = {
   donationId: string;
 };
 
 /** Re-sends the overlay alert for one paid donation row, via `POST /api/donations/[id]/replay`. */
 export function ReplayButton({ donationId }: ReplayButtonProps) {
+  const hydrated = useHydrated();
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -34,7 +37,7 @@ export function ReplayButton({ donationId }: ReplayButtonProps) {
 
   return (
     <>
-      <Button variant="outlined" size="small" onClick={handleReplay} disabled={submitting}>
+      <Button variant="outlined" size="small" onClick={handleReplay} disabled={!hydrated || submitting}>
         Alert ซ้ำ
       </Button>
       <Snackbar

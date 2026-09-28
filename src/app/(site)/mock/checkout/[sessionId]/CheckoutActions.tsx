@@ -7,6 +7,8 @@ import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 
+import { useHydrated } from "@/ui/use-hydrated";
+
 import { simulatePayment } from "./actions";
 
 const NOT_FOUND_MESSAGE = "ไม่พบรายการชำระเงินนี้ หรือหมดอายุแล้ว";
@@ -14,6 +16,7 @@ const SIMULATE_FAILED_MESSAGE = "จำลองการชำระเงิ�
 
 export function CheckoutActions({ sessionId }: { sessionId: string }) {
   const router = useRouter();
+  const hydrated = useHydrated();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Set only for `not_found`: the session is gone/invalid, so retrying the
@@ -33,8 +36,13 @@ export function CheckoutActions({ sessionId }: { sessionId: string }) {
         } else {
           setError(SIMULATE_FAILED_MESSAGE);
         }
+        setPending(false);
         return;
       }
+      // Success: leave `pending` true (no `finally` resetting it) — we're
+      // about to navigate away via `router.push`, and re-enabling both
+      // buttons for the moment before that completes would let a second
+      // click fire another `simulatePayment` for the same session.
       router.push(result.redirectTo);
     } catch {
       // The server action promise itself rejected unexpectedly (e.g. a
@@ -42,7 +50,6 @@ export function CheckoutActions({ sessionId }: { sessionId: string }) {
       // runSimulatedPayment's typed outcomes) — same generic message as a
       // simulate_failed result.
       setError(SIMULATE_FAILED_MESSAGE);
-    } finally {
       setPending(false);
     }
   }
@@ -54,7 +61,7 @@ export function CheckoutActions({ sessionId }: { sessionId: string }) {
         type="button"
         variant="contained"
         color="success"
-        disabled={pending || notFound}
+        disabled={!hydrated || pending || notFound}
         onClick={() => run("succeeded")}
         fullWidth
       >
@@ -64,7 +71,7 @@ export function CheckoutActions({ sessionId }: { sessionId: string }) {
         type="button"
         variant="outlined"
         color="error"
-        disabled={pending || notFound}
+        disabled={!hydrated || pending || notFound}
         onClick={() => run("failed")}
         fullWidth
       >

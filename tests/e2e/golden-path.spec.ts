@@ -1,10 +1,6 @@
-import { execFileSync } from "node:child_process";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { expect, test } from "@playwright/test";
 
-import { onboard, promoteToAdmin, registerUser, simulateMockCheckout } from "./helpers";
+import { bootstrapInvite, onboard, promoteToAdmin, registerUser } from "./helpers";
 
 // One long scenario covering the whole golden path end to end (spec §8):
 // admin creates an invite code in the CMS, a streamer redeems it, sets a
@@ -14,18 +10,6 @@ import { onboard, promoteToAdmin, registerUser, simulateMockCheckout } from "./h
 // the other specs: one long story against the shared local D1 database for
 // this `playwright test` run.
 test.describe.configure({ mode: "serial" });
-
-const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const tsxBin = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
-
-/** Seeds a fresh single-use invite code directly in D1, own code so this spec doesn't collide with others. */
-function bootstrapInvite(code: string): void {
-  execFileSync(
-    process.execPath,
-    [tsxBin, path.join(rootDir, "scripts", "admin-bootstrap-invite.ts"), "--code", code],
-    { stdio: "inherit", cwd: rootDir },
-  );
-}
 
 const ADMIN_USERNAME = "e2egoldadmin";
 const STREAMER_USERNAME = "e2egoldcat";
@@ -96,7 +80,7 @@ test.describe("golden path", () => {
     await viewerPage.getByRole("button", { name: "ชำระเงิน" }).click();
 
     await expect(viewerPage).toHaveURL(/\/mock\/checkout\//);
-    await simulateMockCheckout(viewerPage, "succeeded", new RegExp(`/${SLUG}/result\\?d=`));
+    await viewerPage.getByRole("button", { name: "จำลองชำระสำเร็จ" }).click();
 
     // --- Overlay: the alert plays with the donor's name, amount, and message. ---
     // This is the first real alert this overlay tab has ever received, so
@@ -112,6 +96,7 @@ test.describe("golden path", () => {
     await expect(overlayPage.getByText(DONOR_MESSAGE)).toBeVisible();
 
     // --- Viewer: the result page shows the success message. ---
+    await expect(viewerPage).toHaveURL(new RegExp(`/${SLUG}/result\\?d=`));
     await expect(viewerPage.getByText("ขอบคุณสำหรับการสนับสนุนนะ")).toBeVisible();
 
     // Let the first alert finish its own exit animation (default duration

@@ -12,6 +12,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 
 import { ERROR_MESSAGES } from "@/ui/error-messages";
+import { useHydrated } from "@/ui/use-hydrated";
 
 const DONOR_NAME_KEY = "tippaw:donorName";
 const MESSAGE_MAX_CHARS = 200;
@@ -28,6 +29,7 @@ function charLength(s: string): number {
 }
 
 export function TipForm({ slug, minThb, maxThb }: TipFormProps) {
+  const hydrated = useHydrated();
   const [donorName, setDonorName] = useState("");
   const [remember, setRemember] = useState(false);
   const [message, setMessage] = useState("");
@@ -91,11 +93,18 @@ export function TipForm({ slug, minThb, maxThb }: TipFormProps) {
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string } | null;
         setError(ERROR_MESSAGES[body?.error ?? ""] ?? "ส่งข้อมูลไม่สำเร็จ");
+        setSubmitting(false);
         return;
       }
       const data = (await res.json()) as { checkoutUrl: string };
+      // Leave `submitting` true (no `finally` resetting it) — we're about
+      // to navigate away with a full page load, and re-enabling the button
+      // for the moment before that happens would invite a double submit.
       window.location.href = data.checkoutUrl;
-    } finally {
+    } catch {
+      // The fetch itself rejected (network error, etc.) rather than
+      // resolving with a non-ok response — same generic message.
+      setError("ส่งข้อมูลไม่สำเร็จ");
       setSubmitting(false);
     }
   }
@@ -159,7 +168,25 @@ export function TipForm({ slug, minThb, maxThb }: TipFormProps) {
             ))}
           </Stack>
 
-          <Button type="submit" variant="contained" size="large" disabled={submitting} fullWidth>
+          {/*
+            Disabled until hydrated (see use-hydrated.ts): this form has no
+            `action`, so a native submit before React's onSubmit is wired up
+            would fall back to the browser default — a GET to the current
+            URL that reloads the page and discards whatever the donor
+            typed. Disabling the only submit button also fully prevents an
+            implicit Enter-key submission here (per the HTML spec, that
+            only fires with no disabled default button *and* — separately —
+            exactly one non-button field; this form has three: name,
+            message, amount), so no extra `method`/`action` workaround is
+            needed once the button itself is gated.
+          */}
+          <Button
+            type="submit"
+            variant="contained"
+            size="large"
+            disabled={!hydrated || submitting}
+            fullWidth
+          >
             ชำระเงิน
           </Button>
         </Stack>
