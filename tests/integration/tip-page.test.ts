@@ -2,14 +2,13 @@ import { env } from "cloudflare:test";
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 
-import { createAuth, placeholderEmail } from "@/server/auth/auth";
 import { createDb } from "@/server/db/client";
 import { streamerProfile, tipPage, user } from "@/server/db/schema";
 import type { AppEnv, Deps } from "@/server/env";
 import { handleGetTipPage, handlePutTipPage } from "@/server/tip-page/api";
 import { getPublicTipPage, getTipPage, updateTipPage } from "@/server/tip-page/tip-page";
 
-import { seedStreamer } from "./helpers";
+import { seedStreamer, signUpAndSignIn, uniqueName } from "./helpers";
 
 function makeDeps(now: Date = new Date()): Deps {
   return {
@@ -17,34 +16,6 @@ function makeDeps(now: Date = new Date()): Deps {
     db: createDb(env.DB),
     now: () => now,
   };
-}
-
-function cookieHeader(res: Headers, previous = ""): string {
-  const jar = new Map<string, string>();
-  const put = (pair: string) => {
-    const idx = pair.indexOf("=");
-    jar.set(pair.slice(0, idx), pair.slice(idx + 1));
-  };
-  previous.split(/;\s*/).filter(Boolean).forEach(put);
-  for (const cookie of res.getSetCookie()) put(cookie.split(";")[0]!);
-  return [...jar].map(([k, v]) => `${k}=${v}`).join("; ");
-}
-
-function uniqueName(prefix: string) {
-  return `${prefix}${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`;
-}
-
-async function signUpAndSignIn(deps: Deps, username: string) {
-  const auth = createAuth(deps.env, deps.db);
-  await auth.api.signUpEmail({
-    body: { email: placeholderEmail(username), username, password: "password123", name: username },
-  });
-  const res = await auth.api.signInUsername({
-    body: { username, password: "password123" },
-    returnHeaders: true,
-  });
-  const headers = new Headers({ cookie: cookieHeader(res.headers) });
-  return { headers, userId: res.response!.user.id };
 }
 
 async function makeOnboardedAdmin(deps: Deps, username: string, slug: string) {

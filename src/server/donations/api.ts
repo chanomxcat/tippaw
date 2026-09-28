@@ -1,6 +1,8 @@
+import { apiRequireOnboarded } from "@/server/auth/session";
 import { clientIp, jsonError, parseJson } from "@/server/http";
 import type { Deps } from "@/server/env";
 import { getPaymentProvider } from "@/server/payments";
+import { replayAlert } from "./alerts";
 import { createDonation, donationInputSchema } from "./create-donation";
 import { handleWebhookRequest } from "./handle-payment-event";
 import { getDonationStatus } from "./queries";
@@ -34,6 +36,23 @@ export async function handleDonationStatus(deps: Deps, id: string): Promise<Resp
   if (!status) return jsonError(404, "not_found");
 
   return Response.json({ status: status.status });
+}
+
+/**
+ * `POST /api/donations/[id]/replay`: re-broadcasts the alert for one of the
+ * signed-in streamer's own `paid` donations. `not_found` (unknown/foreign
+ * donation) maps to 404, `not_published` (no alert overlay/variant
+ * configured) to 409.
+ */
+export async function handleReplayDonation(deps: Deps, req: Request, id: string): Promise<Response> {
+  const guard = await apiRequireOnboarded(deps, req.headers);
+  if (!guard.ok) return guard.response;
+
+  const result = await replayAlert(deps, guard.user.id, id);
+  if (result === "not_found") return jsonError(404, "not_found");
+  if (result === "not_published") return jsonError(409, "no_alert_config");
+
+  return Response.json({ ok: true });
 }
 
 /** `POST /api/webhooks/payment`: verifies and applies a payment provider webhook event. */

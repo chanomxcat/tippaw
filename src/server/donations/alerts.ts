@@ -10,13 +10,15 @@ import { publish } from "@/server/realtime/publish";
 /**
  * Re-broadcasts the alert for a streamer's own `paid` donation, ignoring the
  * overlay's minimum-amount setting. Returns `not_found` when the donation
- * doesn't exist, isn't `paid`, or doesn't belong to `streamerId`.
+ * doesn't exist, isn't `paid`, or doesn't belong to `streamerId`; returns
+ * `not_published` when the donation exists but no overlay/variant qualifies
+ * (or the broadcast itself fails) — `ok` means the alert actually went out.
  */
 export async function replayAlert(
   deps: Deps,
   streamerId: string,
   donationId: string,
-): Promise<"ok" | "not_found"> {
+): Promise<"ok" | "not_found" | "not_published"> {
   const row = await deps.db.query.donation.findFirst({
     where: and(
       eq(donation.id, donationId),
@@ -27,22 +29,23 @@ export async function replayAlert(
   if (!row) return "not_found";
 
   const config = await getAlertOverlayConfig(deps, streamerId);
-  if (config) {
-    const variant = selectVariant([config.variant], row.amountSatang);
-    if (variant) {
-      const alertEvent = buildAlertEvent({
-        id: row.id,
-        donorName: row.donorName,
-        amountSatang: row.amountSatang,
-        message: row.messageRaw ?? "",
-        variant,
-      });
-      try {
-        await publish(deps.env, streamerId, alertEvent);
-      } catch (err) {
-        console.error(err);
-      }
-    }
+  if (!config) return "not_published";
+
+  const variant = selectVariant([config.variant], row.amountSatang);
+  if (!variant) return "not_published";
+
+  const alertEvent = buildAlertEvent({
+    id: row.id,
+    donorName: row.donorName,
+    amountSatang: row.amountSatang,
+    message: row.messageRaw ?? "",
+    variant,
+  });
+  try {
+    await publish(deps.env, streamerId, alertEvent);
+  } catch (err) {
+    console.error(err);
+    return "not_published";
   }
 
   return "ok";

@@ -3,16 +3,36 @@ import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 
 import { createDb } from "@/server/db/client";
-import { donation } from "@/server/db/schema";
+import { user } from "@/server/db/auth-schema";
+import { alertVariant, donation } from "@/server/db/schema";
 import type { AppEnv, Deps } from "@/server/env";
 import { createDonation } from "@/server/donations/create-donation";
 import { replayAlert, sendTestAlert } from "@/server/donations/alerts";
+import { handleReplayDonation } from "@/server/donations/api";
 import { handlePaymentEvent, handleWebhookRequest } from "@/server/donations/handle-payment-event";
 import { getDonationStatus, listPaidDonations } from "@/server/donations/queries";
 import { buildMockWebhookRequest, createMockProvider } from "@/server/payments/mock";
 import type { PaymentEvent } from "@/server/payments/types";
 
-import { seedStreamer } from "./helpers";
+import { onboardStreamer, seedStreamer, signUpAndSignIn, uniqueName } from "./helpers";
+
+function req(url: string, init: RequestInit = {}): Request {
+  return new Request(`http://localhost:8787${url}`, init);
+}
+
+/**
+ * Signs up, signs in, and fully onboards a fresh streamer for
+ * `handleReplayDonation` tests (which need a real auth session, unlike
+ * `seedStreamer`'s directly-inserted `user` row). Promoted to admin to
+ * satisfy `apiRequireOnboarded`'s onboarded check without also seeding a
+ * redeemed invite.
+ */
+async function onboardedCaller(deps: Deps, prefix: string, slug: string) {
+  const { headers, userId } = await signUpAndSignIn(deps, uniqueName(prefix));
+  await deps.db.update(user).set({ role: "admin" }).where(eq(user.id, userId));
+  const { token } = await onboardStreamer(deps.db, userId, { slug });
+  return { headers, userId, slug, token };
+}
 
 function randomId() {
   return crypto.randomUUID();
@@ -410,6 +430,135 @@ describe("replayAlert", () => {
     const alertMessage = await socket.next();
     expect(alertMessage.type).toBe("alert");
   });
+
+  it("returns not_published when the donation exists but no alert variant is configured", async () => {
+    const deps = makeDeps();
+    const provider = makeProvider(deps);
+    const streamer = await seedStreamer(deps.db);
+    // seedStreamer always creates a default variant; drop it so no variant qualifies.
+    await deps.db.delete(alertVariant).where(eq(alertVariant.streamerId, streamer.streamerId));
+
+    const created = await createDonation(deps, provider, {
+      slug: streamer.slug,
+      donorName: "แมว",
+      message: "",
+      amountThb: 100,
+    });
+    if (!created.ok) throw new Error("setup failed");
+    const row = await readDonationRow(deps, created.donationId);
+    await handlePaymentEvent(deps, provider.name, {
+      eventId: `evt-${randomId()}`,
+      type: "payment.succeeded",
+      sessionId: row.providerSessionId!,
+    });
+
+    const result = await replayAlert(deps, streamer.streamerId, created.donationId);
+    expect(result).toBe("not_published");
+  });
+});
+
+describe("handleReplayDonation", () => {
+  it("returns 401 when not logged in", async () => {
+    const deps = makeDeps();
+    const res = await handleReplayDonation(
+      deps,
+      req("/api/donations/x/replay", { method: "POST" }),
+      "x",
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 200 and replays the alert for the caller's own paid donation", async () => {
+    const deps = makeDeps();
+    const provider = makeProvider(deps);
+    const { headers, slug, token } = await onboardedCaller(deps, "replay", uniqueName("rp").slice(0, 20));
+    const socket = await connect(token);
+
+    const created = await createDonation(deps, provider, {
+      slug,
+      donorName: "แมว",
+      message: "",
+      amountThb: 100,
+    });
+    if (!created.ok) throw new Error("setup failed");
+    const row = await readDonationRow(deps, created.donationId);
+    await handlePaymentEvent(deps, provider.name, {
+      eventId: `evt-${randomId()}`,
+      type: "payment.succeeded",
+      sessionId: row.providerSessionId!,
+    });
+    await socket.next(); // initial alert
+    await socket.next(); // donation.paid
+
+    const res = await handleReplayDonation(
+      deps,
+      req(`/api/donations/${created.donationId}/replay`, { method: "POST", headers }),
+      created.donationId,
+    );
+    expect(res.status).toBe(200);
+
+    const replayed = await socket.next();
+    expect(replayed.type).toBe("alert");
+  });
+
+  it("returns 404 for a donation that doesn't belong to the caller", async () => {
+    const deps = makeDeps();
+    const provider = makeProvider(deps);
+    const owner = await seedStreamer(deps.db);
+
+    const created = await createDonation(deps, provider, {
+      slug: owner.slug,
+      donorName: "แมว",
+      message: "",
+      amountThb: 100,
+    });
+    if (!created.ok) throw new Error("setup failed");
+    const row = await readDonationRow(deps, created.donationId);
+    await handlePaymentEvent(deps, provider.name, {
+      eventId: `evt-${randomId()}`,
+      type: "payment.succeeded",
+      sessionId: row.providerSessionId!,
+    });
+
+    const { headers } = await onboardedCaller(deps, "otherreplay", uniqueName("other").slice(0, 20));
+
+    const res = await handleReplayDonation(
+      deps,
+      req(`/api/donations/${created.donationId}/replay`, { method: "POST", headers }),
+      created.donationId,
+    );
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "not_found" });
+  });
+
+  it("returns 409 no_alert_config when the donation exists but no alert is configured", async () => {
+    const deps = makeDeps();
+    const provider = makeProvider(deps);
+    const { headers, userId, slug } = await onboardedCaller(deps, "noalert", uniqueName("na").slice(0, 20));
+    await deps.db.delete(alertVariant).where(eq(alertVariant.streamerId, userId));
+
+    const created = await createDonation(deps, provider, {
+      slug,
+      donorName: "แมว",
+      message: "",
+      amountThb: 100,
+    });
+    if (!created.ok) throw new Error("setup failed");
+    const row = await readDonationRow(deps, created.donationId);
+    await handlePaymentEvent(deps, provider.name, {
+      eventId: `evt-${randomId()}`,
+      type: "payment.succeeded",
+      sessionId: row.providerSessionId!,
+    });
+
+    const res = await handleReplayDonation(
+      deps,
+      req(`/api/donations/${created.donationId}/replay`, { method: "POST", headers }),
+      created.donationId,
+    );
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: "no_alert_config" });
+  });
 });
 
 describe("sendTestAlert", () => {
@@ -504,5 +653,52 @@ describe("listPaidDonations", () => {
     expect(page2.items).toHaveLength(1);
     expect(page2.items[0]!.donorName).toBe("Donor 0");
     expect(page2.total).toBe(51);
+  });
+
+  it("treats a non-integer or non-positive page as page 1", async () => {
+    const deps = makeDeps();
+    const streamer = await seedStreamer(deps.db);
+
+    await deps.db.insert(donation).values({
+      id: randomId(),
+      streamerId: streamer.streamerId,
+      kind: "tip",
+      donorName: "Solo",
+      amountSatang: 1000,
+      status: "paid",
+      provider: "mock",
+      createdAt: new Date(),
+      paidAt: new Date(),
+    });
+
+    for (const page of [0, -5, 1.5, NaN]) {
+      const result = await listPaidDonations(deps, streamer.streamerId, page);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]!.donorName).toBe("Solo");
+    }
+  });
+
+  it("breaks paidAt ties with a stable secondary sort by id, newest id first", async () => {
+    const deps = makeDeps();
+    const streamer = await seedStreamer(deps.db);
+    const sameTime = new Date("2026-01-01T00:00:00Z");
+    const ids = [randomId(), randomId(), randomId()].sort();
+
+    for (const id of ids) {
+      await deps.db.insert(donation).values({
+        id,
+        streamerId: streamer.streamerId,
+        kind: "tip",
+        donorName: `Tie ${id}`,
+        amountSatang: 1000,
+        status: "paid",
+        provider: "mock",
+        createdAt: sameTime,
+        paidAt: sameTime,
+      });
+    }
+
+    const result = await listPaidDonations(deps, streamer.streamerId, 1);
+    expect(result.items.map((item) => item.id)).toEqual([...ids].reverse());
   });
 });

@@ -71,21 +71,26 @@ export type ListPaidDonationsResult = {
   total: number;
 };
 
-/** Lists a streamer's `paid` donations, newest first, `PAGE_SIZE` (50) per page (`page` is 1-indexed). */
+/**
+ * Lists a streamer's `paid` donations, newest first (ties broken by `id`
+ * descending for a stable order across pages), `PAGE_SIZE` (50) per page.
+ * `page` is 1-indexed; a non-integer or non-positive `page` is treated as 1.
+ */
 export async function listPaidDonations(
   deps: Deps,
   streamerId: string,
   page: number,
 ): Promise<ListPaidDonationsResult> {
+  const safePage = Number.isInteger(page) && page > 0 ? page : 1;
   const where = and(eq(donation.streamerId, streamerId), eq(donation.status, "paid"));
 
   const rows = await deps.db
     .select()
     .from(donation)
     .where(where)
-    .orderBy(desc(donation.paidAt))
+    .orderBy(desc(donation.paidAt), desc(donation.id))
     .limit(PAGE_SIZE)
-    .offset((page - 1) * PAGE_SIZE);
+    .offset((safePage - 1) * PAGE_SIZE);
 
   const countRows = await deps.db
     .select({ count: sql<number>`count(*)` })
