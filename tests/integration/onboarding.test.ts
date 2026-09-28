@@ -7,6 +7,7 @@ import { alertVariant, inviteCode, overlay, streamerProfile } from "@/server/db/
 import type { AppEnv, Deps } from "@/server/env";
 import type { SessionUser } from "@/server/auth/session";
 import { completeOnboarding, getOnboardingState } from "@/server/onboarding/onboarding";
+import { hasRedeemed } from "@/server/invites/invites";
 
 import { seedUser } from "./helpers";
 
@@ -124,6 +125,87 @@ describe("completeOnboarding", () => {
     });
 
     expect(result).toEqual({ ok: true });
+  });
+
+  it("is idempotent when a profile already exists but the invite wasn't redeemed yet: redeems the code and returns ok without touching the profile", async () => {
+    const deps = makeDeps();
+    const admin = await seedUser(deps.db);
+    const streamer = await seedUser(deps.db, { username: null });
+    const code = await seedInvite(deps, admin.userId);
+
+    // Simulate a user who already has a profile (e.g. won a prior
+    // profile-creation race) but hasn't redeemed an invite yet.
+    await deps.db.insert(streamerProfile).values({
+      userId: streamer.userId,
+      slug: "pre-existing-slug",
+      createdAt: deps.now(),
+    });
+
+    const result = await completeOnboarding(deps, asSessionUser(streamer), {
+      inviteCode: code,
+      slug: "a-different-slug",
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(await hasRedeemed(deps, streamer.userId)).toBe(true);
+
+    const profile = await deps.db.query.streamerProfile.findFirst({
+      where: eq(streamerProfile.userId, streamer.userId),
+    });
+    // Unchanged — completeOnboarding must not touch an existing profile.
+    expect(profile?.slug).toBe("pre-existing-slug");
+  });
+
+  it("returns invite_invalid when redeemInvite returns false (code already exhausted), and creates no profile", async () => {
+    const deps = makeDeps();
+    const admin = await seedUser(deps.db);
+    const winner = await seedUser(deps.db, { username: null });
+    const loser = await seedUser(deps.db, { username: null });
+    const code = await seedInvite(deps, admin.userId, { maxUses: 1 });
+
+    const first = await completeOnboarding(deps, asSessionUser(winner), { inviteCode: code, slug: "winner-cat" });
+    expect(first).toEqual({ ok: true });
+
+    const second = await completeOnboarding(deps, asSessionUser(loser), { inviteCode: code, slug: "loser-cat" });
+    expect(second).toEqual({ ok: false, reason: "invite_invalid" });
+
+    const loserProfile = await deps.db.query.streamerProfile.findFirst({
+      where: eq(streamerProfile.userId, loser.userId),
+    });
+    expect(loserProfile).toBeUndefined();
+  });
+
+  it("under a concurrent race for the same single-use code, exactly one submission succeeds and the loser gets invite_invalid with no profile", async () => {
+    const deps = makeDeps();
+    const admin = await seedUser(deps.db);
+    const userA = await seedUser(deps.db, { username: null });
+    const userB = await seedUser(deps.db, { username: null });
+    const code = await seedInvite(deps, admin.userId, { maxUses: 1 });
+
+    const [resultA, resultB] = await Promise.all([
+      completeOnboarding(deps, asSessionUser(userA), { inviteCode: code, slug: "race-cat-a" }),
+      completeOnboarding(deps, asSessionUser(userB), { inviteCode: code, slug: "race-cat-b" }),
+    ]);
+
+    const results = [resultA, resultB];
+    const oks = results.filter((r) => r.ok);
+    const failures = results.filter((r) => !r.ok);
+    expect(oks).toHaveLength(1);
+    expect(failures).toHaveLength(1);
+    expect(failures[0]).toMatchObject({ ok: false, reason: "invite_invalid" });
+
+    const winner = resultA.ok ? userA : userB;
+    const loser = resultA.ok ? userB : userA;
+
+    const winnerProfile = await deps.db.query.streamerProfile.findFirst({
+      where: eq(streamerProfile.userId, winner.userId),
+    });
+    expect(winnerProfile).toBeDefined();
+
+    const loserProfile = await deps.db.query.streamerProfile.findFirst({
+      where: eq(streamerProfile.userId, loser.userId),
+    });
+    expect(loserProfile).toBeUndefined();
   });
 });
 

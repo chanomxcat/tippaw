@@ -4,7 +4,7 @@ import { DEFAULT_ALERT_SETTINGS, DEFAULT_ALERT_VARIANT } from "@/server/alerts/s
 import type { SessionUser } from "@/server/auth/session";
 import { alertVariant, overlay, streamerProfile, tipPage } from "@/server/db/schema";
 import type { Deps } from "@/server/env";
-import { checkInvite, hasRedeemed, redeemInvite } from "@/server/invites/invites";
+import { hasRedeemed, redeemInvite } from "@/server/invites/invites";
 import { randomToken } from "@/server/lib/random";
 import { validateSlug } from "@/server/lib/slug";
 
@@ -34,11 +34,20 @@ export type CompleteOnboardingResult =
   | { ok: false; reason: "invite_invalid" | "slug_format" | "slug_reserved" | "slug_taken" };
 
 /**
- * Finishes onboarding for `user`: validates the invite code (unless already
- * redeemed or the user is an admin) and the slug, then creates the
- * streamer's `streamer_profile`, `tip_page`, default `alert` overlay, and
- * its default `alert_variant` in one batch. Redeems the invite code last
- * (only once the rest has succeeded).
+ * Finishes onboarding for `user`: redeems the invite code (unless already
+ * redeemed or the user is an admin) and validates the slug, then creates
+ * the streamer's `streamer_profile`, `tip_page`, default `alert` overlay,
+ * and its default `alert_variant` in one batch.
+ *
+ * The invite is redeemed *first*, via `redeemInvite` directly (which is
+ * atomic against concurrent redeemers of the same single-use code) rather
+ * than a `checkInvite` + later `redeemInvite` — that check-then-act gap let
+ * two concurrent submissions both pass validation and both try to create a
+ * profile, with only one invite redemption actually landing. If a user
+ * already has a profile (e.g. they won that profile-creation race on an
+ * earlier call, or this is a retried submission), this is idempotent: it
+ * skips slug validation/insertion entirely and returns `ok` without
+ * touching their existing profile.
  */
 export async function completeOnboarding(
   deps: Deps,
@@ -47,9 +56,20 @@ export async function completeOnboarding(
 ): Promise<CompleteOnboardingResult> {
   const alreadyRedeemed = user.role === "admin" || (await hasRedeemed(deps, user.id));
   if (!alreadyRedeemed) {
-    if (!input.inviteCode || !(await checkInvite(deps, input.inviteCode))) {
+    if (!input.inviteCode) {
       return { ok: false, reason: "invite_invalid" };
     }
+    const redeemed = await redeemInvite(deps, user.id, input.inviteCode);
+    if (!redeemed) {
+      return { ok: false, reason: "invite_invalid" };
+    }
+  }
+
+  const existingProfile = await deps.db.query.streamerProfile.findFirst({
+    where: eq(streamerProfile.userId, user.id),
+  });
+  if (existingProfile) {
+    return { ok: true };
   }
 
   const slugResult = validateSlug(input.slug);
@@ -58,10 +78,10 @@ export async function completeOnboarding(
   }
   const slug = slugResult.slug;
 
-  const existing = await deps.db.query.streamerProfile.findFirst({
+  const existingSlug = await deps.db.query.streamerProfile.findFirst({
     where: eq(streamerProfile.slug, slug),
   });
-  if (existing) {
+  if (existingSlug) {
     return { ok: false, reason: "slug_taken" };
   }
 
@@ -104,10 +124,6 @@ export async function completeOnboarding(
       sortOrder: 0,
     }),
   ]);
-
-  if (input.inviteCode) {
-    await redeemInvite(deps, user.id, input.inviteCode);
-  }
 
   return { ok: true };
 }

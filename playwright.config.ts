@@ -5,6 +5,10 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: "list",
+  // Restores the developer's real .dev.vars once tests finish (see
+  // tests/e2e/global-setup.ts / global-teardown.ts). Safe to wire up here
+  // unlike the reset itself — it only needs to run once, at the very end.
+  globalTeardown: "./tests/e2e/global-teardown.ts",
   // The local wrangler/OpenNext preview server can be slow on first
   // request (cold Worker compile), especially on Windows.
   timeout: 60_000,
