@@ -9,12 +9,17 @@ import Stack from "@mui/material/Stack";
 
 import { simulatePayment } from "./actions";
 
+const NOT_FOUND_MESSAGE = "ไม่พบรายการชำระเงินนี้ หรือหมดอายุแล้ว";
 const SIMULATE_FAILED_MESSAGE = "จำลองการชำระเงินไม่สำเร็จ ลองใหม่อีกครั้ง";
 
 export function CheckoutActions({ sessionId }: { sessionId: string }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Set only for `not_found`: the session is gone/invalid, so retrying the
+  // same buttons can never succeed — disable them rather than inviting a
+  // pointless retry the way the `simulate_failed` message does.
+  const [notFound, setNotFound] = useState(false);
 
   async function run(outcome: "succeeded" | "failed") {
     setPending(true);
@@ -22,14 +27,20 @@ export function CheckoutActions({ sessionId }: { sessionId: string }) {
     try {
       const result = await simulatePayment(sessionId, outcome);
       if (!result.ok) {
-        setError(SIMULATE_FAILED_MESSAGE);
+        if (result.error === "not_found") {
+          setNotFound(true);
+          setError(NOT_FOUND_MESSAGE);
+        } else {
+          setError(SIMULATE_FAILED_MESSAGE);
+        }
         return;
       }
       router.push(result.redirectTo);
     } catch {
-      // The server action promise itself rejected (e.g. a network/runtime
-      // error getting the request there at all) — same user-facing message
-      // as an { ok: false } result.
+      // The server action promise itself rejected unexpectedly (e.g. a
+      // network/runtime error getting the request there at all, not one of
+      // runSimulatedPayment's typed outcomes) — same generic message as a
+      // simulate_failed result.
       setError(SIMULATE_FAILED_MESSAGE);
     } finally {
       setPending(false);
@@ -43,7 +54,7 @@ export function CheckoutActions({ sessionId }: { sessionId: string }) {
         type="button"
         variant="contained"
         color="success"
-        disabled={pending}
+        disabled={pending || notFound}
         onClick={() => run("succeeded")}
         fullWidth
       >
@@ -53,7 +64,7 @@ export function CheckoutActions({ sessionId }: { sessionId: string }) {
         type="button"
         variant="outlined"
         color="error"
-        disabled={pending}
+        disabled={pending || notFound}
         onClick={() => run("failed")}
         fullWidth
       >

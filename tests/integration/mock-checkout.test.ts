@@ -114,11 +114,35 @@ describe("runSimulatedPayment", () => {
     fetchSpy.mockRestore();
   });
 
-  it("returns null for an unknown session id", async () => {
+  it("returns not_found for an unknown session id", async () => {
     const deps = makeDeps();
 
     const result = await runSimulatedPayment(deps, `mcs_${randomId()}`, "succeeded");
-    expect(result).toBeNull();
+    expect(result).toEqual({ ok: false, error: "not_found" });
+  });
+
+  it("returns not_found and writes nothing outside mock mode", async () => {
+    const deps = makeDeps();
+    const provider = makeProvider(deps);
+    const streamer = await seedStreamer(deps.db);
+
+    const created = await createDonation(deps, provider, {
+      slug: streamer.slug,
+      donorName: "แมว",
+      message: "",
+      amountThb: 100,
+    });
+    if (!created.ok) throw new Error("setup failed");
+    const row = await readDonationRow(deps, created.donationId);
+    const sessionId = row.providerSessionId!;
+
+    const nonMockDeps: Deps = { ...deps, env: { ...deps.env, MOCK_MODE: "false" } };
+
+    const result = await runSimulatedPayment(nonMockDeps, sessionId, "succeeded");
+    expect(result).toEqual({ ok: false, error: "not_found" });
+
+    const status = await getDonationStatus(deps, created.donationId);
+    expect(status?.status).toBe("pending");
   });
 
   it("returns an error result and leaves the donation pending when applying the webhook fails", async () => {

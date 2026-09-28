@@ -1,3 +1,4 @@
+import { isMockMode } from "@/server/env";
 import type { Deps } from "@/server/env";
 import { getDonationStatus, getDonationBySession } from "@/server/donations/queries";
 import { handleWebhookRequest } from "@/server/donations/handle-payment-event";
@@ -6,7 +7,7 @@ import { getPaymentProvider } from "@/server/payments";
 
 export type SimulatedPaymentResult =
   | { ok: true; redirectTo: string }
-  | { ok: false; error: "simulate_failed" };
+  | { ok: false; error: "not_found" | "simulate_failed" };
 
 /**
  * Applies a simulated mock-checkout outcome to the donation behind
@@ -16,24 +17,34 @@ export type SimulatedPaymentResult =
  * the same path a real provider's webhook takes, so the flow stays
  * idempotent and exercises the real alert-publishing code.
  *
- * `handleWebhookRequest` never throws — it turns a bad signature (400) or
- * any internal error (500) into a JSON error `Response` instead. Left
- * unchecked, that failure would be invisible here: the donation would stay
- * `pending` while the caller still reported success and sent the donor to
- * the result page to poll for up to 5 minutes. `res.ok` is checked so a
- * failure comes back as `{ ok: false, error: "simulate_failed" }` instead.
+ * Every failure mode comes back as a typed `{ ok: false, error }` result
+ * instead of `null`/thrown errors, so this whole function is the testable
+ * "pure core" behind the `simulatePayment` server action — the action is a
+ * thin `getDeps()` wrapper around it and never needs its own `notFound()`
+ * control-flow throw (which a client component calling a server action
+ * can't safely `catch` around, since Next.js relies on that error
+ * propagating to render the not-found boundary).
  *
- * Returns `null` when `sessionId` doesn't match any donation (unknown or
- * already-consumed session), so the caller (the `simulatePayment` server
- * action) can 404.
+ * - Outside mock mode, or for a `sessionId` that doesn't match any donation
+ *   (unknown or already-consumed session): `{ ok: false, error: "not_found" }`.
+ * - `handleWebhookRequest` never throws — it turns a bad signature (400) or
+ *   any internal error (500) into a JSON error `Response` instead. Left
+ *   unchecked, that failure would be invisible here: the donation would stay
+ *   `pending` while the caller still reported success and sent the donor to
+ *   the result page to poll for up to 5 minutes. `res.ok` is checked so a
+ *   failure comes back as `{ ok: false, error: "simulate_failed" }` instead.
  */
 export async function runSimulatedPayment(
   deps: Deps,
   sessionId: string,
   outcome: "succeeded" | "failed",
-): Promise<SimulatedPaymentResult | null> {
+): Promise<SimulatedPaymentResult> {
+  if (!isMockMode(deps.env)) {
+    return { ok: false, error: "not_found" };
+  }
+
   const donationRow = await getDonationBySession(deps, sessionId);
-  if (!donationRow) return null;
+  if (!donationRow) return { ok: false, error: "not_found" };
 
   const provider = getPaymentProvider(deps.env);
   const req = await buildMockWebhookRequest({
@@ -48,7 +59,7 @@ export async function runSimulatedPayment(
   }
 
   const status = await getDonationStatus(deps, donationRow.id);
-  if (!status) return null;
+  if (!status) return { ok: false, error: "not_found" };
 
   return { ok: true, redirectTo: `/${status.slug}/result?d=${donationRow.id}` };
 }

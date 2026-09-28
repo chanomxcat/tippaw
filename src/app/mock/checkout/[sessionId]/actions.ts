@@ -1,28 +1,24 @@
 "use server";
 
-import { notFound } from "next/navigation";
-
-import { getDeps, isMockMode } from "@/server/env";
+import { getDeps } from "@/server/env";
 import { runSimulatedPayment, type SimulatedPaymentResult } from "@/server/payments/simulate";
 
 export type { SimulatedPaymentResult };
 
 /**
- * Server action behind the mock checkout page's two buttons. Applies the
- * simulated outcome in-process (`runSimulatedPayment` never calls `fetch`)
- * and returns either the result page's URL for the client to navigate to,
- * or a typed error the client shows as an alert — it doesn't `redirect()`
- * itself, so `runSimulatedPayment`'s return value stays directly testable.
+ * Server action behind the mock checkout page's two buttons. A thin
+ * `getDeps()` wrapper around `runSimulatedPayment`, which returns typed
+ * results for every expected outcome (`not_found` outside mock mode or for
+ * an unknown/stale session, `simulate_failed` when applying the webhook
+ * fails, or `{ ok: true, redirectTo }`) — this action deliberately never
+ * throws its own control-flow error (e.g. `notFound()`) here, since a
+ * client component awaiting a server action can't safely wrap that call in
+ * try/catch without also swallowing Next.js's own special errors.
  */
 export async function simulatePayment(
   sessionId: string,
   outcome: "succeeded" | "failed",
 ): Promise<SimulatedPaymentResult> {
   const deps = await getDeps();
-  if (!isMockMode(deps.env)) notFound();
-
-  const result = await runSimulatedPayment(deps, sessionId, outcome);
-  if (!result) notFound();
-
-  return result;
+  return runSimulatedPayment(deps, sessionId, outcome);
 }
