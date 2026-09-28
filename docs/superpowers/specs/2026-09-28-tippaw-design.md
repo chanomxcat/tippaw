@@ -46,7 +46,9 @@ Cloudflare Worker (tippaw)
    └─ TtsProvider       → MockTts | AzureTts   (เฟส 2)
 ```
 
-`worker.ts` เป็น custom entry ที่ห่อ handler ของ OpenNext และ export class `StreamerRoom` เพื่อให้ Worker ตัวเดียวมีทั้ง Next.js และ DO
+`worker.ts` เป็น custom entry ที่ห่อ handler ของ OpenNext และ export class `StreamerRoom` เพื่อให้ Worker ตัวเดียวมีทั้ง Next.js และ DO; request `/api/realtime/*` (WebSocket upgrade) ถูกจัดการใน `worker.ts` โดยตรงก่อนถึง Next.js
+
+**ข้อห้าม:** Worker ห้าม fetch HTTP กลับหาตัวเอง (ใช้ไม่ได้บน production) — mock webhook และ mock Streamlabs token/userinfo เรียกฟังก์ชันใน process ตรง
 
 ### 3.1 เส้นทาง URL
 
@@ -88,7 +90,7 @@ Cloudflare Worker (tippaw)
 ```ts
 type RealtimeEvent =
   | { type: 'alert'; id: string; donorName: string; amountSatang: number; message: string;
-      variant: AlertVariantRender; ttsUrl?: string }
+      headline: string /* template ที่ render แล้ว */; variant: AlertVariantRender; ttsUrl?: string }
   | { type: 'gift'; id: string; donorName: string; gift: GiftRender }          // เฟส 3
   | { type: 'donation.paid'; donorName: string; amountSatang: number; paidAt: string } // widget เฟส 4
   | { type: 'settings.updated'; overlayType: OverlayType }                      // overlay โหลด settings ใหม่
@@ -182,11 +184,11 @@ custom_profanity_word   (เฟส 2)
 - **Local:** username + password (username plugin); ฟอร์มสมัครมีช่อง invite code
 - **Google:** OAuth จริง (Google Cloud โหมด Testing, ≤100 test users); อีเมลตรงกับบัญชีเดิม → ผูกบัญชีเดียวกัน
 - **Streamlabs:** `genericOAuth` — authorize/token/userinfo URL, client id/secret มาจาก env; ตอนนี้ชี้ `/mock/streamlabs/*` (หน้าจำลองการอนุญาต ให้เลือก/กรอกชื่อผู้ใช้ Streamlabs ปลอม)
-- **Onboarding (`/onboarding`):** ผู้ใช้ที่ยังไม่มี `invite_redemption` หรือ `streamer_profile` ถูกบังคับเข้าหน้านี้ก่อนเข้า dashboard ทุกครั้ง (middleware)
+- **Onboarding (`/onboarding`):** ผู้ใช้ที่ยังไม่มี `invite_redemption` หรือ `streamer_profile` ถูกบังคับเข้าหน้านี้ก่อนเข้า dashboard ทุกครั้ง (ตรวจใน server layout ของ dashboard + API guard)
   1. ใส่ invite code (ข้ามได้ถ้าสมัคร local และใส่โค้ดถูกแล้วตอนสมัคร) — ใช้กับ **ทุกวิธีล็อกอิน** รวม Google/Streamlabs เพราะ OAuth สร้างบัญชีได้โดยไม่ผ่านฟอร์มสมัคร
   2. ตั้ง `slug`
 - **Redeem invite code:** ตรวจ `disabled_at IS NULL`, ยังไม่หมดอายุ, `used_count < max_uses` → เพิ่ม `used_count` แบบมีเงื่อนไข (`UPDATE ... WHERE used_count < max_uses`) + insert `invite_redemption` ใน D1 batch เดียว กันการใช้เกินโควตาเมื่อสมัครพร้อมกัน; โค้ดไม่ถูกต้องตอบข้อความเดียวกันทุกกรณี (ไม่บอกว่าผิดเพราะอะไร) + rate limit ต่อ IP
-- **Admin:** role `admin` เท่านั้นเข้า `/admin/*` ได้ (ตรวจทั้ง middleware และทุก API); admin คนแรกสร้างด้วยสคริปต์ `pnpm admin:promote <username>` (รัน `wrangler d1 execute` ทั้ง local/remote) — ไม่มีทางเป็น admin ผ่านเว็บเอง; admin ข้าม invite code ได้
+- **Admin:** role `admin` เท่านั้นเข้า `/admin/*` ได้ (ตรวจทั้ง middleware และทุก API); admin คนแรก: `pnpm admin:bootstrap-invite` สร้าง invite code ใช้ได้ 1 ครั้ง → สมัครด้วยโค้ดนั้น → `pnpm admin:promote <username>` (ทั้งสองรัน `wrangler d1 execute` ได้ทั้ง local/remote) — ไม่มีทางเป็น admin ผ่านเว็บเอง; admin ข้าม invite code ได้
 
 ### Admin CMS (`/admin`, เฟส 1)
 - **Invite codes:** ตาราง (โค้ด, หมายเหตุ, ใช้แล้ว/โควตา, วันหมดอายุ, สถานะ, สร้างเมื่อ)
@@ -224,7 +226,7 @@ custom_profanity_word   (เฟส 2)
 ```
 tippaw/
 ├─ worker.ts                  custom entry: OpenNext handler + export StreamerRoom
-├─ wrangler.jsonc             bindings: DB (D1), STREAMER_ROOM (DO), RATE_LIMITER, vars
+├─ wrangler.jsonc             bindings: DB (D1), STREAMER_ROOM (DO), DONATION_RATE_LIMITER, INVITE_RATE_LIMITER, vars
 ├─ open-next.config.ts
 ├─ drizzle/                   migrations
 ├─ scripts/admin-promote.ts   ตั้ง role admin ผ่าน wrangler d1 execute
