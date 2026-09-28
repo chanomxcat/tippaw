@@ -1,7 +1,6 @@
-import { eq } from "drizzle-orm";
 import type { AppEnv } from "@/server/env";
 import { createDb } from "@/server/db/client";
-import { overlay } from "@/server/db/schema";
+import { findOverlayByToken } from "@/server/overlays/overlays";
 import { roomFor } from "@/server/realtime/room-client";
 
 /**
@@ -25,13 +24,9 @@ export async function handleRealtimeRequest(
   }
 
   const db = createDb(env.DB);
-  const [row] = await db
-    .select({ streamerId: overlay.streamerId })
-    .from(overlay)
-    .where(eq(overlay.token, token))
-    .limit(1);
+  const found = await findOverlayByToken(db, token);
 
-  if (!row) {
+  if (!found) {
     return new Response("Not Found", { status: 404 });
   }
 
@@ -39,6 +34,6 @@ export async function handleRealtimeRequest(
   headers.set("x-overlay-token", token);
   const forwardRequest = new Request(request, { headers });
 
-  const room = roomFor(env.STREAMER_ROOM, row.streamerId);
+  const room = roomFor(env.STREAMER_ROOM, found.streamerId);
   return room.fetch(forwardRequest);
 }

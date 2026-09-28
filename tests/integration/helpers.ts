@@ -1,3 +1,5 @@
+import { eq } from "drizzle-orm";
+
 import { createAuth, placeholderEmail } from "@/server/auth/auth";
 import { createDb } from "@/server/db/client";
 import { alertVariant, overlay, payoutAccount, streamerProfile, tipPage } from "@/server/db/schema";
@@ -142,6 +144,23 @@ export async function onboardStreamer(
   });
 
   return { slug, token };
+}
+
+/**
+ * Signs up (credential), signs in, and fully onboards a fresh streamer —
+ * for handler tests that need a real auth session (unlike `seedStreamer`,
+ * which inserts the `user` row directly). Promoted to admin so
+ * `apiRequireOnboarded` passes without also seeding a redeemed invite.
+ */
+export async function onboardedCaller(
+  deps: Deps,
+  prefix: string,
+  slug: string,
+): Promise<{ headers: Headers; userId: string; slug: string; token: string }> {
+  const { headers, userId } = await signUpAndSignIn(deps, uniqueName(prefix));
+  await deps.db.update(user).set({ role: "admin" }).where(eq(user.id, userId));
+  const { token } = await onboardStreamer(deps.db, userId, { slug });
+  return { headers, userId, slug, token };
 }
 
 export type SeedStreamerOptions = OnboardStreamerOptions;
