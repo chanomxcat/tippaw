@@ -7,6 +7,33 @@ function randomId() {
   return crypto.randomUUID();
 }
 
+export type SeedUserOptions = {
+  username?: string | null;
+  name?: string;
+};
+
+/** Seeds a plain `user` row for tests that only need an account (e.g. invite admins/redeemers). */
+export async function seedUser(
+  db: ReturnType<typeof createDb>,
+  options: SeedUserOptions = {},
+): Promise<{ userId: string; username: string | null; name: string }> {
+  const userId = randomId();
+  const name = options.name ?? `user-${userId.slice(0, 8)}`;
+  const username = options.username === undefined ? `user${userId.slice(0, 8)}` : options.username;
+
+  await db.insert(user).values({
+    id: userId,
+    name,
+    email: `${userId}@example.com`,
+    emailVerified: false,
+    username,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  return { userId, username, name };
+}
+
 export type SeedStreamerOptions = {
   slug?: string;
   payoutActive?: boolean;
