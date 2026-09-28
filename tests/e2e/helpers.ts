@@ -1,4 +1,11 @@
+import { execFileSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import type { Page } from "@playwright/test";
+
+const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+const tsxBin = path.join(rootDir, "node_modules", "tsx", "dist", "cli.mjs");
 
 /** Fills and submits the register form (`/register?code=...`). Leaves the browser wherever the app redirects to next (normally `/onboarding`). */
 export async function registerUser(
@@ -19,4 +26,13 @@ export async function registerUser(
 export async function onboard(page: Page, slug: string): Promise<void> {
   await page.getByLabel("Slug").fill(slug);
   await page.getByRole("button", { name: "บันทึก" }).click();
+}
+
+/** Promotes `username` to admin by shelling out to `scripts/admin-promote.ts` against the local D1 database. */
+export function promoteToAdmin(username: string): void {
+  execFileSync(
+    process.execPath,
+    [tsxBin, path.join(rootDir, "scripts", "admin-promote.ts"), username],
+    { stdio: "inherit", cwd: rootDir },
+  );
 }
