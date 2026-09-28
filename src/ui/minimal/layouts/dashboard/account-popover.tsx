@@ -40,14 +40,22 @@ export function AccountPopover({ user, sx, ...other }: AccountPopoverProps) {
 
   const handleSignOut = useCallback(async () => {
     handleClosePopover();
-    await fetch("/api/auth/sign-out", { method: "POST" });
+    // better-auth's endpoint requires a JSON content type even for an empty
+    // body, or it 415s and the session cookie never gets cleared.
+    await fetch("/api/auth/sign-out", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
     router.push("/login");
+    router.refresh();
   }, [handleClosePopover, router]);
 
   return (
     <>
       <IconButton
         onClick={handleOpenPopover}
+        aria-label="บัญชีผู้ใช้"
         sx={{
           p: "2px",
           width: 40,

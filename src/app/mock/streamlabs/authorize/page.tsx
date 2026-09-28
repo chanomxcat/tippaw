@@ -1,32 +1,12 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
-import { buildAuthorizeRedirect, isAllowedRedirectUri } from "@/server/auth/mock-streamlabs";
+import { isAllowedRedirectUri } from "@/server/auth/mock-streamlabs";
 import { getDeps, isMockMode } from "@/server/env";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 function first(value: string | string[] | undefined): string {
   return (Array.isArray(value) ? value[0] : value) ?? "";
-}
-
-async function approve(formData: FormData) {
-  "use server";
-  const { env } = await getDeps();
-  if (!isMockMode(env)) notFound();
-
-  const redirectUri = String(formData.get("redirect_uri") ?? "");
-  const state = String(formData.get("state") ?? "");
-  const streamlabsUsername = String(formData.get("streamlabs_username") ?? "");
-  if (!isAllowedRedirectUri(redirectUri, env.BETTER_AUTH_URL)) notFound();
-
-  let target: string;
-  try {
-    target = buildAuthorizeRedirect({ redirectUri, state, streamlabsUsername });
-  } catch {
-    const retry = new URLSearchParams({ redirect_uri: redirectUri, state, error: "invalid_username" });
-    redirect(`/mock/streamlabs/authorize?${retry.toString()}`);
-  }
-  redirect(target);
 }
 
 export default async function MockStreamlabsAuthorizePage({
@@ -55,7 +35,14 @@ export default async function MockStreamlabsAuthorizePage({
     <main style={{ maxWidth: 420, margin: "64px auto", padding: 16 }}>
       <h1>Streamlabs (จำลอง)</h1>
       <p>TipPaw ขอเข้าถึงบัญชี Streamlabs ของคุณ กรอกชื่อผู้ใช้ Streamlabs ปลอมเพื่อดำเนินการต่อ</p>
-      <form action={approve}>
+      {/*
+        Plain HTML form POST (not a React Server Action): the target is a
+        real HTTP redirect to /api/auth/callback/streamlabs, and a Server
+        Action's redirect() to a non-page URL doesn't reliably drive an
+        ordinary full-page browser navigation there. See
+        src/app/api/mock/streamlabs/authorize/route.ts.
+      */}
+      <form action="/api/mock/streamlabs/authorize" method="post">
         <input type="hidden" name="redirect_uri" value={redirectUri} />
         <input type="hidden" name="state" value={state} />
         <label htmlFor="streamlabs_username">ชื่อผู้ใช้ Streamlabs</label>

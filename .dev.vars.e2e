@@ -1,0 +1,12 @@
+# Committed env vars for the Playwright E2E preview server (MOCK_MODE only —
+# never real secrets). Copied to `.dev.vars` by tests/e2e/global-setup.ts
+# before `next build`/`preview` starts. `.dev.vars` itself stays gitignored.
+
+MOCK_MODE=true
+BETTER_AUTH_SECRET=e2e-test-secret-not-for-production-use
+BETTER_AUTH_URL=http://localhost:8787
+
+MOCK_WEBHOOK_SECRET=e2e-mock-webhook-secret
+
+STREAMLABS_CLIENT_ID=mock-client
+STREAMLABS_CLIENT_SECRET=mock-secret

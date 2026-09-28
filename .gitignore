@@ -13,9 +13,13 @@ next-env.d.ts
 .dev.vars
 .dev.vars.*
 !.dev.vars.example
+!.dev.vars.e2e
 
 # testing
 coverage/
+/test-results/
+/playwright-report/
+/blob-report/
 
 # misc
 .DS_Store
