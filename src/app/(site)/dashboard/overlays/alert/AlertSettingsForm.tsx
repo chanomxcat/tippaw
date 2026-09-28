@@ -22,6 +22,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
 import { ColorField } from "@/components/ColorField";
+import { AlertPlayer } from "@/overlay/AlertPlayer";
 import { resolveSoundUrl } from "@/server/alerts/build-event";
 import { renderTemplate } from "@/server/alerts/render-template";
 import {
@@ -97,6 +98,7 @@ export function AlertSettingsForm({
   const [resetOpen, setResetOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [previewTick, setPreviewTick] = useState(0);
 
   const currentSoundUrl = soundMode === "custom" ? customSoundUrl.trim() || null : `preset:${soundMode}`;
 
@@ -184,6 +186,29 @@ export function AlertSettingsForm({
     amountSatang: PREVIEW_AMOUNT_SATANG,
     message: PREVIEW_MESSAGE,
   });
+
+  // The same shape the overlay itself receives over the WebSocket — rendered
+  // through the exact same `AlertPlayer` so the preview matches OBS 1:1.
+  // `id` changes each loop so `AlertPlayer` restarts its animation; sound is
+  // silenced here (`soundUrl: null`) so it doesn't replay on every loop.
+  const previewEvent = {
+    type: "alert" as const,
+    id: `preview-${previewTick}`,
+    donorName: PREVIEW_DONOR,
+    amountSatang: PREVIEW_AMOUNT_SATANG,
+    message: PREVIEW_MESSAGE,
+    headline: previewText,
+    variant: {
+      textColor,
+      fontFamily: variant.fontFamily,
+      fontSize,
+      imageUrl: imageUrl.trim() || null,
+      soundUrl: null,
+      animationIn,
+      animationOut,
+      durationMs: Math.round((Number(durationSec) || 0) * 1000) || 1000,
+    },
+  };
 
   return (
     <Stack spacing={3} sx={{ maxWidth: 960 }}>
@@ -371,17 +396,19 @@ export function AlertSettingsForm({
           <Typography variant="subtitle2" sx={{ mb: 2 }}>
             ตัวอย่าง
           </Typography>
-          <Box sx={{ bgcolor: "#111", borderRadius: 1, p: 3, textAlign: "center" }}>
-            <Typography
-              sx={{
-                color: textColor,
-                fontSize: `${fontSize}px`,
-                fontFamily: "Prompt, sans-serif",
-                wordBreak: "break-word",
-              }}
-            >
-              {previewText}
-            </Typography>
+          <Box
+            sx={{
+              bgcolor: "#111",
+              borderRadius: 1,
+              p: 3,
+              minHeight: 160,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+            }}
+          >
+            <AlertPlayer event={previewEvent} onDone={() => setPreviewTick((t) => t + 1)} />
           </Box>
         </Card>
       </Stack>

@@ -1,0 +1,117 @@
+/* Overlay pages are embedded in OBS as a browser source: the page itself
+   must stay fully transparent so only the alert graphic shows over the
+   stream. No MUI/CssBaseline runs here (see src/app/overlay/layout.tsx). */
+html,
+body {
+  background: transparent;
+  margin: 0;
+  padding: 0;
+}
+
+.tp-in-fade {
+  animation: tp-fade-in 500ms ease-out both;
+}
+.tp-out-fade {
+  animation: tp-fade-out 500ms ease-in both;
+}
+
+.tp-in-slide-up {
+  animation: tp-slide-up-in 500ms ease-out both;
+}
+.tp-out-slide-up {
+  animation: tp-slide-up-out 500ms ease-in both;
+}
+
+.tp-in-slide-down {
+  animation: tp-slide-down-in 500ms ease-out both;
+}
+.tp-out-slide-down {
+  animation: tp-slide-down-out 500ms ease-in both;
+}
+
+.tp-in-zoom {
+  animation: tp-zoom-in 500ms ease-out both;
+}
+.tp-out-zoom {
+  animation: tp-zoom-out 500ms ease-in both;
+}
+
+@keyframes tp-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes tp-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes tp-slide-up-in {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes tp-slide-up-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+}
+
+@keyframes tp-slide-down-in {
+  from {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes tp-slide-down-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+}
+
+@keyframes tp-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes tp-zoom-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
