@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import type { AppEnv } from "@/server/env";
 import { createDb } from "@/server/db/client";
 import { overlay } from "@/server/db/schema";
-import { roomFor } from "@/server/realtime/streamer-room";
+import { roomFor } from "@/server/realtime/room-client";
 
 /**
  * Handles requests under `/api/realtime/{token}`. Validates the WebSocket

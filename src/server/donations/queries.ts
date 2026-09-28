@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 
-import { donation, streamerProfile } from "@/server/db/schema";
+import { donation, streamerProfile, tipPage } from "@/server/db/schema";
 import type { Deps } from "@/server/env";
 
 const PAGE_SIZE = 50;
@@ -26,6 +26,36 @@ export async function getDonationStatus(
   if (!profile) return null;
 
   return { status: row.status, slug: profile.slug };
+}
+
+export type DonationBySession = {
+  id: string;
+  amountSatang: number;
+  status: "pending" | "paid" | "failed";
+  channelName: string;
+};
+
+/** Looks up a donation by its provider session id, with its streamer's channel name, for the mock checkout page. */
+export async function getDonationBySession(
+  deps: Deps,
+  sessionId: string,
+): Promise<DonationBySession | null> {
+  const row = await deps.db.query.donation.findFirst({
+    where: eq(donation.providerSessionId, sessionId),
+  });
+  if (!row) return null;
+
+  const page = await deps.db.query.tipPage.findFirst({
+    where: eq(tipPage.userId, row.streamerId),
+  });
+  if (!page) return null;
+
+  return {
+    id: row.id,
+    amountSatang: row.amountSatang,
+    status: row.status,
+    channelName: page.channelName,
+  };
 }
 
 export type PaidDonationItem = {

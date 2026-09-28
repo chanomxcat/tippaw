@@ -1,6 +1,6 @@
 import type { AppEnv } from "@/server/env";
 import type { RealtimeEvent } from "@/server/realtime/events";
-import { roomFor } from "@/server/realtime/streamer-room";
+import { roomFor } from "@/server/realtime/room-client";
 
 /** Broadcasts `event` to every overlay currently connected to `streamerId`'s realtime room. */
 export async function publish(

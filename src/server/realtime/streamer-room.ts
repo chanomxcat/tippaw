@@ -68,8 +68,3 @@ export class StreamerRoom extends DurableObject<AppEnv> {
     ws.close(code, reason);
   }
 }
-
-/** Resolves the Durable Object stub for a streamer's realtime room. */
-export function roomFor(ns: AppEnv["STREAMER_ROOM"], streamerId: string) {
-  return ns.get(ns.idFromName(streamerId));
-}
