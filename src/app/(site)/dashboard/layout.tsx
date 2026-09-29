@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { requireOnboarded } from "@/server/auth/page-guards";
-import { DashboardShell } from "@/ui/minimal/layouts/dashboard";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { STREAMER_NAV } from "@/ui/nav-config";
 
 export const metadata: Metadata = {
