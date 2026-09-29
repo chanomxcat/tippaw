@@ -1,14 +1,3 @@
-import Card from "@mui/material/Card";
-import Link from "@mui/material/Link";
-import Stack from "@mui/material/Stack";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Typography from "@mui/material/Typography";
-
 import { requireOnboarded } from "@/server/auth/page-guards";
 import { listPaidDonations, PAGE_SIZE } from "@/server/donations/queries";
 import { getDeps } from "@/server/env";
@@ -42,71 +31,63 @@ export default async function TransactionsPage({
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <Stack spacing={3}>
-      <Typography variant="h4">ธุรกรรม</Typography>
+    <div className="flex max-w-7xl flex-col gap-6">
+      <h1 className="text-2xl font-semibold">ธุรกรรม</h1>
 
       {items.length === 0 ? (
-        <Typography variant="body1">ยังไม่มีรายการโดเนท</Typography>
+        <p>ยังไม่มีรายการโดเนท</p>
       ) : (
-        <Card>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>วันที่</TableCell>
-                  <TableCell>ชื่อ</TableCell>
-                  <TableCell>จำนวนเงิน</TableCell>
-                  <TableCell>ข้อความ</TableCell>
-                  <TableCell />
-                </TableRow>
-              </TableHead>
-              <TableBody>
+        <div className="card bg-base-100 shadow">
+          <div className="overflow-x-auto">
+            <table className="table w-full">
+              <thead>
+                <tr>
+                  <th>วันที่</th>
+                  <th>ชื่อ</th>
+                  <th>จำนวนเงิน</th>
+                  <th>ข้อความ</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
                 {items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{dateFormatter.format(item.paidAt)}</TableCell>
-                    <TableCell>{item.donorName}</TableCell>
-                    <TableCell>฿{formatThb(item.amountSatang)}</TableCell>
-                    <TableCell>{item.message}</TableCell>
-                    <TableCell align="right">
+                  <tr key={item.id}>
+                    <td>{dateFormatter.format(item.paidAt)}</td>
+                    <td>{item.donorName}</td>
+                    <td>฿{formatThb(item.amountSatang)}</td>
+                    <td>{item.message}</td>
+                    <td className="text-right">
                       <ReplayButton donationId={item.id} />
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              </tbody>
+            </table>
+          </div>
 
           {totalPages > 1 && (
-            <Stack
-              direction="row"
-              spacing={2}
-              sx={{ p: 2, alignItems: "center", justifyContent: "flex-end" }}
-            >
+            <div className="flex items-center justify-end gap-2 p-4">
               {page > 1 ? (
-                <Link href={`/dashboard/transactions?page=${page - 1}`} underline="hover">
+                <a href={`/dashboard/transactions?page=${page - 1}`} className="link link-hover">
                   ก่อนหน้า
-                </Link>
+                </a>
               ) : (
-                <Typography variant="body2" color="text.disabled">
-                  ก่อนหน้า
-                </Typography>
+                <span className="text-base-content/40">ก่อนหน้า</span>
               )}
-              <Typography variant="body2">
+              <span className="text-sm">
                 หน้า {page} / {totalPages}
-              </Typography>
+              </span>
               {page < totalPages ? (
-                <Link href={`/dashboard/transactions?page=${page + 1}`} underline="hover">
+                <a href={`/dashboard/transactions?page=${page + 1}`} className="link link-hover">
                   ถัดไป
-                </Link>
+                </a>
               ) : (
-                <Typography variant="body2" color="text.disabled">
-                  ถัดไป
-                </Typography>
+                <span className="text-base-content/40">ถัดไป</span>
               )}
-            </Stack>
+            </div>
           )}
-        </Card>
+        </div>
       )}
-    </Stack>
+    </div>
   );
 }

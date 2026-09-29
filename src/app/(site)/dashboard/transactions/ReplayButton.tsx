@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 
-import Button from "@mui/material/Button";
-import Snackbar from "@mui/material/Snackbar";
-
+import { useToast } from "@/components/ui/toast";
 import { useHydrated } from "@/ui/use-hydrated";
 
 export type ReplayButtonProps = {
@@ -14,38 +12,34 @@ export type ReplayButtonProps = {
 /** Re-sends the overlay alert for one paid donation row, via `POST /api/donations/[id]/replay`. */
 export function ReplayButton({ donationId }: ReplayButtonProps) {
   const hydrated = useHydrated();
+  const { show: showToast } = useToast();
   const [submitting, setSubmitting] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
 
   async function handleReplay() {
     setSubmitting(true);
     try {
       const res = await fetch(`/api/donations/${donationId}/replay`, { method: "POST" });
       if (res.ok) {
-        setToast("ส่ง alert แล้ว");
+        showToast("ส่ง alert แล้ว", "success");
       } else if (res.status === 409) {
-        setToast("ยังไม่ได้ตั้งค่า Alert");
+        showToast("ยังไม่ได้ตั้งค่า Alert", "error");
       } else {
-        setToast("ส่ง alert ไม่สำเร็จ");
+        showToast("ส่ง alert ไม่สำเร็จ", "error");
       }
     } catch {
-      setToast("ส่ง alert ไม่สำเร็จ");
+      showToast("ส่ง alert ไม่สำเร็จ", "error");
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <>
-      <Button variant="outlined" size="small" onClick={handleReplay} disabled={!hydrated || submitting}>
-        Alert ซ้ำ
-      </Button>
-      <Snackbar
-        open={Boolean(toast)}
-        autoHideDuration={2000}
-        onClose={() => setToast(null)}
-        message={toast ?? ""}
-      />
-    </>
+    <button
+      onClick={handleReplay}
+      disabled={!hydrated || submitting}
+      className="btn btn-outline btn-sm"
+    >
+      Alert ซ้ำ
+    </button>
   );
 }
