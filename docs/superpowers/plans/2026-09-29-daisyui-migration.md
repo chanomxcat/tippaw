@@ -27,7 +27,7 @@
 - `ColorField`'s hex text input must keep the accessible name `"สีข้อความ"` matched with `exact: true` in `tests/e2e/alert-settings.spec.ts` — don't let it collide with the native color-swatch input's own accessible name.
 - The reset-overlay-token confirmation button text `"ยืนยันรีเซ็ต"` (currently an MUI `Dialog`) must survive the move into the shared daisyUI modal in `tests/e2e/alert-settings.spec.ts` / `tests/e2e/overlay.spec.ts`.
 - The dark-mode toggle (new, no spec precedent) must not be reachable/clickable before Task 9 finishes, since pages still on MUI won't respond to `data-theme` and would render half-light/half-dark — Task 2 wires the mechanism but the toggle stays hidden behind `MOCK_MODE`-independent code review until Task 9 confirms full coverage (see Task 2 Step notes and Task 9).
-- `admin/invites-client.tsx`'s enable/disable `Switch` and the three `TextField select` + `MenuItem` dropdowns in `AlertSettingsForm` have no current e2e coverage locking in their exact behavior (only manual/visual verification) — Tasks 8 and 6 must manually exercise them via `pnpm dev` since a regression there wouldn't fail CI.
+- `admin/invites-client.tsx`'s enable/disable `Switch` and the three `TextField select` + `MenuItem` dropdowns in `AlertSettingsForm` have no current e2e coverage locking in their exact behavior (only manual/visual verification) — Tasks 8 and 6 must manually exercise them via `npm run dev` since a regression there wouldn't fail CI.
 
 ---
 
@@ -46,7 +46,7 @@
 
 - [ ] **Step 1: Install dependencies**
 
-Run: `pnpm add tailwindcss @tailwindcss/postcss daisyui lucide-react`
+Run: `npm install tailwindcss @tailwindcss/postcss daisyui lucide-react`
 Expected: `package.json` and lockfile updated, no peer-dependency errors.
 
 - [ ] **Step 2: Create `postcss.config.mjs`**
@@ -71,7 +71,7 @@ Inside `<html lang="th" className={prompt.variable}>`, before `<body>`, add a `<
 
 - [ ] **Step 6: Verify the build compiles, including the Cloudflare/OpenNext packaging step**
 
-Run: `pnpm build` (this project's `build` script runs `opennextjs-cloudflare build`, which itself calls `next build` — this is the same pipeline used for deploy, addressing the CSS-first Tailwind/PostCSS config risk noted in the migration spec §8)
+Run: `npm run build` (this project's `build` script runs `opennextjs-cloudflare build`, which itself calls `next build` — this is the same pipeline used for deploy, addressing the CSS-first Tailwind/PostCSS config risk noted in the migration spec §8)
 Expected: build succeeds (MUI pages still render via `Providers`/Emotion; Tailwind/daisyUI CSS is additionally generated — no PostCSS errors, `.open-next/` produced).
 
 - [ ] **Step 7: Verify theme tokens are in the compiled CSS**
@@ -82,7 +82,7 @@ Expected: at least one match, confirming the custom theme reached the compiled s
 - [ ] **Step 8: Commit**
 
 ```bash
-git add package.json pnpm-lock.yaml postcss.config.mjs src/app/globals.css src/lib/theme.ts "src/app/(site)/layout.tsx"
+git add package.json package-lock.json postcss.config.mjs src/app/globals.css src/lib/theme.ts "src/app/(site)/layout.tsx"
 git commit -m "feat: add Tailwind v4 + daisyUI setup with tippaw/tippaw-dark themes"
 ```
 
@@ -135,12 +135,12 @@ Delete exactly the files listed above under "Delete" — leave `src/ui/minimal/t
 
 - [ ] **Step 8: Manually verify nav/header/toggle in the browser**
 
-Run: `pnpm dev`, sign in, open `/dashboard` and `/admin` (as admin user)
+Run: `npm run dev`, sign in, open `/dashboard` and `/admin` (as admin user)
 Expected: nav renders both route groups' items with lucide icons, mobile drawer opens/closes, account dropdown shows name + logout, theme toggle flips `data-theme` on `<html>` (visual effect is partial until later tasks — that's expected per Review Focus).
 
 - [ ] **Step 9: Run affected e2e specs**
 
-Run: `pnpm exec playwright test tests/e2e/auth.spec.ts tests/e2e/settings.spec.ts`
+Run: `npx playwright test tests/e2e/auth.spec.ts tests/e2e/settings.spec.ts`
 Expected: PASS (these log in and reach dashboard pages through the new shell; the pages themselves are still MUI and unchanged).
 
 - [ ] **Step 10: Commit**
@@ -182,12 +182,12 @@ Replace `Box`/`Button`/`Typography` with Tailwind equivalents; no behavior to pr
 
 - [ ] **Step 5: Manual smoke check**
 
-Run: `pnpm dev`, visit `/login`, `/register`, `/onboarding`, `/`
+Run: `npm run dev`, visit `/login`, `/register`, `/onboarding`, `/`
 Expected: forms render, submit, and show inline errors as before.
 
 - [ ] **Step 6: Run affected e2e spec**
 
-Run: `pnpm exec playwright test tests/e2e/auth.spec.ts`
+Run: `npx playwright test tests/e2e/auth.spec.ts`
 Expected: PASS.
 
 - [ ] **Step 7: Commit**
@@ -235,12 +235,12 @@ Replace `Box`/`Card`/`Chip`/`Container`/`Stack`/`Typography` in `page.tsx` and `
 
 - [ ] **Step 6: Manual smoke check**
 
-Run: `pnpm dev` with `MOCK_MODE=true`, visit a streamer's `/{slug}` page, submit a donation, complete mock checkout, land on `/{slug}/result`
+Run: `npm run dev` with `MOCK_MODE=true`, visit a streamer's `/{slug}` page, submit a donation, complete mock checkout, land on `/{slug}/result`
 Expected: full flow renders and behaves as before.
 
 - [ ] **Step 7: Run affected e2e specs**
 
-Run: `pnpm exec playwright test tests/e2e/donate.spec.ts`
+Run: `npx playwright test tests/e2e/donate.spec.ts`
 Expected: PASS.
 
 - [ ] **Step 8: Commit**
@@ -282,12 +282,12 @@ Same pattern; preserve the "Slug" field label and the "แสดง URL" reveal-
 
 - [ ] **Step 5: Manual smoke check**
 
-Run: `pnpm dev`, edit profile and tip-page settings, confirm the toast appears on save
+Run: `npm run dev`, edit profile and tip-page settings, confirm the toast appears on save
 Expected: matches prior Snackbar behavior visually (transient, auto-dismissing).
 
 - [ ] **Step 6: Run affected e2e spec**
 
-Run: `pnpm exec playwright test tests/e2e/settings.spec.ts`
+Run: `npx playwright test tests/e2e/settings.spec.ts`
 Expected: PASS.
 
 - [ ] **Step 7: Commit**
@@ -341,12 +341,12 @@ Same pattern as Task 5 Step 3.
 
 - [ ] **Step 8: Manual smoke check for the un-covered widgets (Review Focus)**
 
-Run: `pnpm dev`, open `/dashboard/overlays/alert`, exercise all three `<select>` dropdowns and the range slider, save, and confirm the saved values round-trip correctly on reload
+Run: `npm run dev`, open `/dashboard/overlays/alert`, exercise all three `<select>` dropdowns and the range slider, save, and confirm the saved values round-trip correctly on reload
 Expected: behavior matches the pre-migration MUI form (no e2e spec locks this in, so this manual pass is the only check).
 
 - [ ] **Step 9: Run affected e2e specs**
 
-Run: `pnpm exec playwright test tests/e2e/alert-settings.spec.ts tests/e2e/overlay.spec.ts`
+Run: `npx playwright test tests/e2e/alert-settings.spec.ts tests/e2e/overlay.spec.ts`
 Expected: PASS.
 
 - [ ] **Step 10: Commit**
@@ -377,12 +377,12 @@ Replace `Button`/`Snackbar` with `btn` + `useToast().show(...)`, keeping the "Al
 
 - [ ] **Step 3: Manual smoke check**
 
-Run: `pnpm dev`, open `/dashboard/transactions`, click "Alert ซ้ำ" on a row
+Run: `npm run dev`, open `/dashboard/transactions`, click "Alert ซ้ำ" on a row
 Expected: toast confirms the replay, table pagination still works.
 
 - [ ] **Step 4: Run affected e2e spec**
 
-Run: `pnpm exec playwright test tests/e2e/transactions.spec.ts`
+Run: `npx playwright test tests/e2e/transactions.spec.ts`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -430,12 +430,12 @@ Same `Card`/`Stack`/`Typography`/table-to-daisyUI pattern as Task 7 Step 1 (both
 
 - [ ] **Step 7: Manual smoke check for the switch (Review Focus)**
 
-Run: `pnpm dev` as an admin user, open `/admin/invites`, toggle an invite code's enabled state
+Run: `npm run dev` as an admin user, open `/admin/invites`, toggle an invite code's enabled state
 Expected: state persists and reflects correctly (no e2e coverage for this control).
 
 - [ ] **Step 8: Run affected e2e spec**
 
-Run: `pnpm exec playwright test tests/e2e/admin.spec.ts`
+Run: `npx playwright test tests/e2e/admin.spec.ts`
 Expected: PASS.
 
 - [ ] **Step 9: Commit**
@@ -473,12 +473,12 @@ If the file's only remaining job was the MUI theme, delete it and update `src/ap
 
 - [ ] **Step 4: Remove the MUI/Emotion/Minimal dependencies**
 
-Run: `pnpm remove @mui/material @mui/material-nextjs @emotion/react @emotion/styled minimal-shared simplebar-react @iconify/react`
+Run: `npm uninstall @mui/material @mui/material-nextjs @emotion/react @emotion/styled minimal-shared simplebar-react @iconify/react`
 Expected: `package.json`/lockfile updated, no other package still requires them.
 
 - [ ] **Step 5: Full build and test suite**
 
-Run: `pnpm build && pnpm test && pnpm exec playwright test`
+Run: `npm run build && npm test && npx playwright test`
 Expected: build succeeds (Cloudflare/OpenNext packaging included); all unit, integration, and e2e specs (including `tests/e2e/golden-path.spec.ts`, which exercises the full cross-role journey) PASS.
 
 - [ ] **Step 6: Update the main design doc**
