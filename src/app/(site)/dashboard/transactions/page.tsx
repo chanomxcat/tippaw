@@ -37,7 +37,7 @@ export default async function TransactionsPage({
       {items.length === 0 ? (
         <p>ยังไม่มีรายการโดเนท</p>
       ) : (
-        <div className="card bg-base-100 shadow">
+        <div className="surface">
           <div className="overflow-x-auto">
             <table className="table w-full">
               <thead>

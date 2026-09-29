@@ -54,8 +54,8 @@ export function LoginForm({ hasGoogle, hasStreamlabs }: LoginFormProps) {
   }
 
   return (
-    <div className="mx-auto flex max-w-xs flex-col py-16">
-      <div className="card bg-base-100 shadow p-8">
+    <div className="mx-auto flex max-w-sm flex-col py-10">
+      <div className="surface p-8">
         <h1 className="mb-6 text-3xl font-medium">เข้าสู่ระบบ</h1>
 
         <div className="mb-6 flex flex-col gap-3">

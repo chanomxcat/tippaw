@@ -20,7 +20,7 @@ export default async function AdminUsersPage() {
     <div className="flex max-w-7xl flex-col gap-6">
       <h1 className="text-2xl font-semibold">ผู้ใช้</h1>
 
-      <div className="card bg-base-100 shadow">
+      <div className="surface">
         <div className="overflow-x-auto">
           <table className="table w-full">
             <thead>

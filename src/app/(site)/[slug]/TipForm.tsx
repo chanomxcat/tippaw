@@ -101,7 +101,7 @@ export function TipForm({ slug, minThb, maxThb }: TipFormProps) {
   }
 
   return (
-    <div className="card bg-base-100 shadow p-8">
+    <div className="surface p-6">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {error && (
           <div role="alert" className="alert alert-error">
@@ -152,6 +152,23 @@ export function TipForm({ slug, minThb, maxThb }: TipFormProps) {
           </div>
         </div>
 
+        <div className="flex flex-wrap gap-2" role="group" aria-label="จำนวนเงินแนะนำ">
+          {QUICK_AMOUNTS.map((amount) => {
+            const selected = amountInput === String(amount);
+            return (
+              <button
+                key={amount}
+                type="button"
+                aria-pressed={selected}
+                className={`btn btn-sm flex-1 ${selected ? "btn-primary" : "btn-outline"}`}
+                onClick={() => setAmountInput(String(amount))}
+              >
+                ฿{amount}
+              </button>
+            );
+          })}
+        </div>
+
         <div className="flex flex-col gap-1">
           <label htmlFor="tip-amount" className="label">
             <span>จำนวนเงิน (บาท)</span>
@@ -168,19 +185,6 @@ export function TipForm({ slug, minThb, maxThb }: TipFormProps) {
           <div className="label">
             <span id="tip-amount-hint" className="text-xs">{`ขั้นต่ำ ${minThb} บาท สูงสุด ${maxThb} บาท`}</span>
           </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {QUICK_AMOUNTS.map((amount) => (
-            <button
-              key={amount}
-              type="button"
-              className="btn btn-outline btn-sm"
-              onClick={() => setAmountInput(String(amount))}
-            >
-              {amount}
-            </button>
-          ))}
         </div>
 
         {/*
@@ -200,6 +204,7 @@ export function TipForm({ slug, minThb, maxThb }: TipFormProps) {
           className="btn btn-primary btn-lg btn-block"
           disabled={!hydrated || submitting}
         >
+          {submitting && <span className="loading loading-spinner loading-sm" aria-hidden />}
           ชำระเงิน
         </button>
       </form>

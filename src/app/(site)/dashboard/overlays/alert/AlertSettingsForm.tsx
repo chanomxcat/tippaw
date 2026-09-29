@@ -198,7 +198,7 @@ export function AlertSettingsForm({
     <div className="flex max-w-5xl flex-col gap-6">
       <h1 className="text-2xl font-semibold">ตั้งค่า Alert Overlay</h1>
 
-      <div className="card bg-base-100 shadow p-6">
+      <div className="surface p-6">
         <div className="flex flex-col gap-4">
           <h2 className="text-lg font-semibold">Overlay URL</h2>
           <div className="flex flex-col gap-1">
@@ -244,7 +244,7 @@ export function AlertSettingsForm({
       </div>
 
       <div className="flex flex-col items-start gap-6 md:flex-row">
-        <div className="card bg-base-100 w-full flex-[2] shadow p-6">
+        <div className="surface w-full flex-[2] p-6">
           <form onSubmit={handleSave} className="flex flex-col gap-4">
             {error && (
               <div role="alert" className="alert alert-error">
@@ -417,7 +417,7 @@ export function AlertSettingsForm({
           </form>
         </div>
 
-        <div className="card bg-base-100 w-full flex-1 shadow p-6">
+        <div className="surface w-full flex-1 p-6">
           <h2 className="mb-4 text-sm font-semibold">ตัวอย่าง</h2>
           <div className="flex min-h-[160px] items-center justify-center overflow-hidden rounded-box bg-[#111] p-6">
             <AlertPlayer event={previewEvent} onDone={() => setPreviewTick((t) => t + 1)} />

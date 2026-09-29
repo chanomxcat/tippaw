@@ -42,8 +42,8 @@ export function OnboardingForm({ needsInvite }: OnboardingFormProps) {
   const slugPreview = slug.trim().toLowerCase() || "your-slug";
 
   return (
-    <div className="mx-auto flex max-w-xs flex-col py-16">
-      <div className="card bg-base-100 shadow p-8">
+    <div className="mx-auto flex max-w-sm flex-col py-10">
+      <div className="surface p-8">
         <h1 className="mb-1 text-3xl font-medium">ตั้งค่าบัญชี</h1>
         <p className="text-base-content/60 mb-6 text-sm">ก่อนเริ่มใช้งาน กรุณากรอกข้อมูลให้ครบ</p>
 

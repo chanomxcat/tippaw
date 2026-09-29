@@ -24,13 +24,15 @@ export default async function DonationResultPage({
   if (!page) notFound();
 
   return (
-    <div className="mx-auto max-w-xs py-8">
+    <div className="bg-pearls min-h-screen px-4 py-10">
+      <div className="mx-auto max-w-sm">
       <ResultPoller
         donationId={d}
         slug={page.slug}
         successMessage={page.successMessage}
         failureMessage={page.failureMessage}
       />
+      </div>
     </div>
   );
 }

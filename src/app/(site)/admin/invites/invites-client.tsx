@@ -120,7 +120,7 @@ export function InvitesClient({ initialInvites }: { initialInvites: InviteViewRo
         </button>
       </div>
 
-      <div className="card bg-base-100 shadow">
+      <div className="surface">
         <div className="overflow-x-auto">
           <table className="table w-full">
             <thead>

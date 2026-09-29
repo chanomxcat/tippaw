@@ -3,68 +3,75 @@
   themes: tippaw --default, tippaw-dark --prefersdark;
 }
 
+/* Tippaw palette — แมวส้ม + ชานมไข่มุก
+   primary  = ส้มแมว (ข้อความบนปุ่มใช้น้ำตาลเข้ม เพราะขาวบนส้มสด contrast ไม่ถึง 4.5:1)
+   secondary= ชมพูสตรอว์เบอร์รีนม
+   accent   = ม่วงเผือก
+   base     = ครีมนม / น้ำตาลชา */
 @plugin "daisyui/theme" {
   name: "tippaw";
   default: true;
   color-scheme: light;
-  --color-primary: #8B639B;         /* primary.main */
-  --color-primary-content: #FFFFFF;
-  --color-secondary: #F8B2B2;       /* secondary.main */
-  --color-secondary-content: #403D88; /* ห้ามใช้ตัวขาวบน secondary — ตามสเปกหลัก */
-  --color-accent: #403D88;          /* primary.dark เดิม ใช้เป็น accent */
+  --color-primary: #FF7A1A;
+  --color-primary-content: #2E1706;
+  --color-secondary: #FF8FB1;
+  --color-secondary-content: #4A1226;
+  --color-accent: #7C4DFF;
   --color-accent-content: #FFFFFF;
-  --color-neutral: #1C252E;
-  --color-neutral-content: #FFFFFF;
-  --color-base-100: #FFFFFF;
-  --color-base-200: #F4F6F8;
-  --color-base-300: #DFE3E8;
-  --color-base-content: #1C252E;
-  --color-info: #00B8D9;
+  --color-neutral: #3B2416;
+  --color-neutral-content: #FFF6EA;
+  --color-base-100: #FFFDF9;
+  --color-base-200: #FFF4E4;
+  --color-base-300: #F2E1C8;
+  --color-base-content: #3B2416;
+  --color-info: #0EA5E9;
   --color-info-content: #FFFFFF;
-  --color-success: #22C55E;
-  --color-success-content: #ffffff;
-  --color-warning: #FFAB00;
-  --color-warning-content: #1C252E;
-  --color-error: #FF5630;
+  --color-success: #16A34A;
+  --color-success-content: #FFFFFF;
+  --color-warning: #FFC53D;
+  --color-warning-content: #3B2416;
+  --color-error: #E5484D;
   --color-error-content: #FFFFFF;
-  --radius-box: 0.75rem;
-  --radius-field: 0.5rem;
-  --radius-selector: 0.5rem;
+  --radius-box: 1.25rem;
+  --radius-field: 0.875rem;
+  --radius-selector: 999px;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 1;
+  --border: 1.5px;
+  --depth: 0;
   --noise: 0;
 }
 
 @plugin "daisyui/theme" {
   name: "tippaw-dark";
   color-scheme: dark;
-  --color-primary: #AF719D;         /* primary.light เดิม — คมชัดขึ้นบนพื้นมืด */
-  --color-primary-content: #1C252E;
-  --color-secondary: #F8B2B2;
-  --color-secondary-content: #2A2860;
-  --color-accent: #E7D6E3;
-  --color-accent-content: #1C252E;
-  --color-neutral: #F4F6F8;
-  --color-neutral-content: #1C252E;
-  --color-base-100: #1C252E;
-  --color-base-200: #141A21;
-  --color-base-300: #2A323C;
-  --color-base-content: #F4F6F8;
-  --color-info: #61F3F3;
-  --color-info-content: #1C252E; /* bg เป็นสีอ่อน (คำนวณ contrast แล้ว ~11.6:1 ดีกว่าตัวขาว ~1.3:1) */
-  --color-success: #77ED8B;
-  --color-success-content: #1C252E; /* bg เป็นสีอ่อนเช่นกัน ~10.6:1 vs ~1.5:1 */
+  --color-primary: #FF9A47;
+  --color-primary-content: #2E1706;
+  --color-secondary: #FF8FB1;
+  --color-secondary-content: #4A1226;
+  --color-accent: #B197FF;
+  --color-accent-content: #1E1238;
+  --color-neutral: #F5E6D3;
+  --color-neutral-content: #2A1A10;
+  --color-base-100: #261911;
+  --color-base-200: #1C120C;
+  --color-base-300: #3D2A1D;
+  --color-base-content: #F8EBDA;
+  --color-info: #5CC8FF;
+  --color-info-content: #0B2433;
+  --color-success: #5BD98A;
+  --color-success-content: #0B2A16;
   --color-warning: #FFD666;
-  --color-warning-content: #1C252E;
-  --color-error: #FFAC82;
-  --color-error-content: #1C252E; /* bg เป็นสีส้มอ่อน ~8.5:1 vs ~1.8:1 */
-  --radius-selector: 0.5rem;
+  --color-warning-content: #3B2416;
+  --color-error: #FF8A8E;
+  --color-error-content: #3A0C0E;
+  --radius-box: 1.25rem;
+  --radius-field: 0.875rem;
+  --radius-selector: 999px;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 1;
+  --border: 1.5px;
+  --depth: 0;
   --noise: 0;
 }
 
@@ -87,5 +94,47 @@
   body {
     background-color: var(--color-base-100);
     color: var(--color-base-content);
+  }
+}
+
+/* Brand helpers — flat, minimal: soft cream surface + hairline border. */
+@layer components {
+  .surface {
+    background-color: var(--color-base-100);
+    border: 1.5px solid var(--color-base-300);
+    border-radius: var(--radius-box);
+  }
+
+  .bg-cream {
+    background-color: var(--color-base-200);
+  }
+
+  /* จุดไข่มุกจางๆ เป็นพื้นหลังหน้า landing / auth */
+  .bg-pearls {
+    background-image: radial-gradient(
+      color-mix(in oklab, var(--color-primary) 22%, transparent) 1.5px,
+      transparent 1.5px
+    );
+    background-size: 28px 28px;
+  }
+
+  @keyframes tippaw-bob {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-2deg);
+    }
+    50% {
+      transform: translateY(-8px) rotate(2deg);
+    }
+  }
+
+  .animate-bob {
+    animation: tippaw-bob 3.2s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-bob {
+      animation: none;
+    }
   }
 }

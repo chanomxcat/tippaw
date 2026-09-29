@@ -62,7 +62,7 @@ export function ResultPoller({ donationId, slug, successMessage, failureMessage 
 
   if (status === "pending") {
     return (
-      <div className="card bg-base-100 shadow p-8 text-center">
+      <div className="surface p-8 text-center">
         <div className="flex flex-col items-center gap-4">
           <span className="loading loading-spinner" />
           <p>กำลังตรวจสอบการชำระเงิน...</p>
@@ -73,7 +73,7 @@ export function ResultPoller({ donationId, slug, successMessage, failureMessage 
 
   if (status === "paid") {
     return (
-      <div className="card bg-base-100 shadow p-8">
+      <div className="surface p-8">
         <div role="alert" className="alert alert-success">
           <span>{successMessage || "ขอบคุณสำหรับการสนับสนุน!"}</span>
         </div>
@@ -83,7 +83,7 @@ export function ResultPoller({ donationId, slug, successMessage, failureMessage 
 
   if (status === "failed") {
     return (
-      <div className="card bg-base-100 shadow p-8">
+      <div className="surface p-8">
         <div className="flex flex-col gap-4">
           <div role="alert" className="alert alert-error">
             <span>{failureMessage || "การชำระเงินไม่สำเร็จ"}</span>
@@ -97,7 +97,7 @@ export function ResultPoller({ donationId, slug, successMessage, failureMessage 
   }
 
   return (
-    <div className="card bg-base-100 shadow p-8">
+    <div className="surface p-8">
       <div role="alert" className="alert alert-warning">
         <span>ยังไม่ได้รับการยืนยันการชำระเงิน</span>
       </div>

@@ -42,12 +42,12 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
             aria-label="บัญชีผู้ใช้"
             className="btn btn-circle btn-ghost avatar avatar-placeholder"
           >
-            <div className="bg-neutral text-neutral-content size-10 rounded-full">
+            <div className="bg-primary text-primary-content size-10 rounded-full font-semibold">
               <span>{user.name.charAt(0).toUpperCase()}</span>
             </div>
           </button>
 
-          <ul className="menu dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
+          <ul className="menu dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 border-base-300 border">
             <li className="menu-title">{user.name}</li>
             <li>
               <hr className="border-base-300 my-1" />

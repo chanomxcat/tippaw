@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { TippawMark } from "@/components/brand/logo";
 import { getDeps } from "@/server/env";
 import { getPublicTipPage } from "@/server/tip-page/tip-page";
 
@@ -58,44 +59,60 @@ export default async function TipPage({ params }: { params: Params }) {
   };
 
   return (
-    <div className="mx-auto flex max-w-xs flex-col gap-6 py-8">
-      <script
-        type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <div className="card bg-base-100 shadow p-8 text-center">
-        <h1 className="mb-2 text-3xl font-medium">{page.channelName}</h1>
-        {page.links.length > 0 && (
-          <div className="flex flex-col gap-2">
-            {page.links.map((link) => (
-              <a
-                key={link.url}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-outline btn-block"
-              >
-                {link.label}
-              </a>
-            ))}
+    <div className="bg-pearls min-h-screen px-4 py-10">
+      <div className="mx-auto flex max-w-sm flex-col gap-4">
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <div className="surface flex flex-col items-center gap-4 p-6 text-center">
+          <span
+            aria-hidden
+            className="bg-primary text-primary-content flex size-20 items-center justify-center rounded-full text-3xl font-semibold"
+          >
+            {[...page.channelName][0]?.toUpperCase()}
+          </span>
+          <div>
+            <h1 className="text-2xl font-semibold">{page.channelName}</h1>
+            <p className="text-base-content/60 text-sm">ส่งกำลังใจให้สตรีมเมอร์คนโปรด</p>
+          </div>
+          {page.links.length > 0 && (
+            <div className="flex w-full flex-col gap-2">
+              {page.links.map((link) => (
+                <a
+                  key={link.url}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-outline btn-block"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {page.accepting ? (
+          <TipForm
+            slug={page.slug}
+            minThb={Number(deps.env.MIN_DONATION_THB)}
+            maxThb={Number(deps.env.MAX_DONATION_THB)}
+          />
+        ) : (
+          <div className="surface p-6">
+            <div role="alert" className="alert alert-info">
+              <span>ยังไม่เปิดรับโดเนท</span>
+            </div>
           </div>
         )}
-      </div>
 
-      {page.accepting ? (
-        <TipForm
-          slug={page.slug}
-          minThb={Number(deps.env.MIN_DONATION_THB)}
-          maxThb={Number(deps.env.MAX_DONATION_THB)}
-        />
-      ) : (
-        <div className="card bg-base-100 shadow p-8">
-          <div role="alert" className="alert alert-info">
-            <span>ยังไม่เปิดรับโดเนท</span>
-          </div>
-        </div>
-      )}
+        <a href="/" className="text-base-content/60 mx-auto inline-flex items-center gap-1.5 text-sm">
+          <TippawMark size={18} />
+          ขับเคลื่อนโดย TipPaw
+        </a>
+      </div>
     </div>
   );
 }

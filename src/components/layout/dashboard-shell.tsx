@@ -23,7 +23,7 @@ export function DashboardShell({ nav, user, children }: DashboardShellProps) {
       <div className="drawer-content flex min-h-screen flex-col">
         <DashboardHeader user={user} />
 
-        <main className="flex-1 p-5">{children}</main>
+        <main className="bg-base-200 flex-1 p-4 sm:p-6">{children}</main>
       </div>
 
       <div className="drawer-side z-10">

@@ -49,7 +49,7 @@ export default async function MockCheckoutPage({ params }: { params: Params }) {
 
   return (
     <div className="mx-auto max-w-xs py-8">
-      <div className="card bg-base-100 shadow p-8 text-center">
+      <div className="surface p-8 text-center">
         <div className="flex flex-col items-center gap-6">
           <div className="badge badge-warning">โหมดทดสอบ — ไม่มีการตัดเงินจริง</div>
           <h2 className="text-xl font-medium">{donationRow.channelName}</h2>

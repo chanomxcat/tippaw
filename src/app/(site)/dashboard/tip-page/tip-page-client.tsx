@@ -84,7 +84,7 @@ export function TipPageClient({
         </a>
       </div>
 
-      <div className="card bg-base-100 shadow p-6">
+      <div className="surface p-6">
         <form onSubmit={handleSave} className="flex flex-col gap-4">
           {error && (
             <div role="alert" className="alert alert-error">
