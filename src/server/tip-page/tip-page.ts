@@ -113,3 +113,14 @@ export async function getPublicTipPage(deps: Deps, rawSlug: string): Promise<Pub
     accepting: payout?.status === "active",
   };
 }
+
+/** Slugs of every streamer currently accepting donations, for the sitemap. */
+export async function listAcceptingSlugs(deps: Deps): Promise<string[]> {
+  const rows = await deps.db
+    .select({ slug: streamerProfile.slug })
+    .from(streamerProfile)
+    .innerJoin(tipPage, eq(tipPage.userId, streamerProfile.userId))
+    .innerJoin(payoutAccount, eq(payoutAccount.userId, streamerProfile.userId))
+    .where(eq(payoutAccount.status, "active"));
+  return rows.map((row) => row.slug);
+}

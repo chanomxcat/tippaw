@@ -20,6 +20,7 @@ const prompt = Prompt({
 export const metadata: Metadata = {
   title: "TipPaw Overlay",
   description: "TipPaw alert overlay (OBS browser source)",
+  robots: { index: false, follow: false },
 };
 
 export default function OverlayLayout({
