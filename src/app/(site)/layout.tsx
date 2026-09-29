@@ -73,6 +73,14 @@ export default function RootLayout({
 
   return (
     <html lang="th" className={prompt.variable}>
+      <head>
+        <script
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem("tippaw-theme");var t=s==="tippaw"||s==="tippaw-dark"?s:(window.matchMedia("(prefers-color-scheme: dark)").matches?"tippaw-dark":"tippaw");document.documentElement.dataset.theme=t;}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body>
         <script
           type="application/ld+json"
