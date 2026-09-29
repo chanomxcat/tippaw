@@ -111,13 +111,20 @@ export function TipPageClient({
             <Stack spacing={1}>
               <Typography variant="subtitle2">ลิงก์</Typography>
               {links.map((link, index) => (
-                <Stack key={index} direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                <Stack
+                  key={index}
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={1}
+                  sx={{ alignItems: { xs: "stretch", sm: "center" } }}
+                >
                   <TextField
                     label="ชื่อลิงก์"
                     value={link.label}
                     onChange={(e) => updateLink(index, "label", e.target.value)}
                     slotProps={{ htmlInput: { maxLength: 30 } }}
                     size="small"
+                    fullWidth
+                    sx={{ minWidth: 0, width: { xs: "100%", sm: 160 } }}
                   />
                   <TextField
                     label="URL"
@@ -125,33 +132,36 @@ export function TipPageClient({
                     onChange={(e) => updateLink(index, "url", e.target.value)}
                     size="small"
                     fullWidth
+                    sx={{ minWidth: 0 }}
                   />
-                  <IconButton
-                    type="button"
-                    size="small"
-                    aria-label="เลื่อนขึ้น"
-                    onClick={() => moveLink(index, -1)}
-                    disabled={index === 0}
-                  >
-                    <Iconify icon="solar:alt-arrow-up-bold-duotone" />
-                  </IconButton>
-                  <IconButton
-                    type="button"
-                    size="small"
-                    aria-label="เลื่อนลง"
-                    onClick={() => moveLink(index, 1)}
-                    disabled={index === links.length - 1}
-                  >
-                    <Iconify icon="solar:alt-arrow-down-bold-duotone" />
-                  </IconButton>
-                  <IconButton
-                    type="button"
-                    size="small"
-                    aria-label={`ลบลิงก์ ${index + 1}`}
-                    onClick={() => removeLink(index)}
-                  >
-                    <Iconify icon="solar:trash-bin-trash-bold-duotone" />
-                  </IconButton>
+                  <Stack direction="row" spacing={0.5} sx={{ justifyContent: { xs: "flex-end", sm: "flex-start" } }}>
+                    <IconButton
+                      type="button"
+                      size="small"
+                      aria-label="เลื่อนขึ้น"
+                      onClick={() => moveLink(index, -1)}
+                      disabled={index === 0}
+                    >
+                      <Iconify icon="solar:alt-arrow-up-bold-duotone" />
+                    </IconButton>
+                    <IconButton
+                      type="button"
+                      size="small"
+                      aria-label="เลื่อนลง"
+                      onClick={() => moveLink(index, 1)}
+                      disabled={index === links.length - 1}
+                    >
+                      <Iconify icon="solar:alt-arrow-down-bold-duotone" />
+                    </IconButton>
+                    <IconButton
+                      type="button"
+                      size="small"
+                      aria-label={`ลบลิงก์ ${index + 1}`}
+                      onClick={() => removeLink(index)}
+                    >
+                      <Iconify icon="solar:trash-bin-trash-bold-duotone" />
+                    </IconButton>
+                  </Stack>
                 </Stack>
               ))}
               <Button

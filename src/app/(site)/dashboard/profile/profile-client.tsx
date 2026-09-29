@@ -94,7 +94,13 @@ export function ProfileClient({ slug: initialSlug, payout: initialPayout, baseUr
             {error && <Alert severity="error">{error}</Alert>}
             <TextField label="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} required fullWidth />
             <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-              <Link href={`/${savedSlug}`} target="_blank" rel="noopener noreferrer" underline="hover">
+              <Link
+                href={`/${savedSlug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                underline="hover"
+                sx={{ minWidth: 0, wordBreak: "break-all" }}
+              >
                 {tipPageUrl}
               </Link>
               <IconButton
