@@ -3,10 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import Alert from "@mui/material/Alert";
-import Button from "@mui/material/Button";
-import Stack from "@mui/material/Stack";
-
 import { useHydrated } from "@/ui/use-hydrated";
 
 import { simulatePayment } from "./actions";
@@ -55,28 +51,28 @@ export function CheckoutActions({ sessionId }: { sessionId: string }) {
   }
 
   return (
-    <Stack spacing={2} sx={{ width: "100%" }}>
-      {error && <Alert severity="error">{error}</Alert>}
-      <Button
+    <div className="flex w-full flex-col gap-4">
+      {error && (
+        <div role="alert" className="alert alert-error">
+          <span>{error}</span>
+        </div>
+      )}
+      <button
         type="button"
-        variant="contained"
-        color="success"
+        className="btn btn-success btn-block"
         disabled={!hydrated || pending || notFound}
         onClick={() => run("succeeded")}
-        fullWidth
       >
         จำลองชำระสำเร็จ
-      </Button>
-      <Button
+      </button>
+      <button
         type="button"
-        variant="outlined"
-        color="error"
+        className="btn btn-outline btn-error btn-block"
         disabled={!hydrated || pending || notFound}
         onClick={() => run("failed")}
-        fullWidth
       >
         จำลองชำระไม่สำเร็จ
-      </Button>
-    </Stack>
+      </button>
+    </div>
   );
 }

@@ -1,12 +1,5 @@
 import { notFound } from "next/navigation";
 
-import Box from "@mui/material/Box";
-import Card from "@mui/material/Card";
-import Chip from "@mui/material/Chip";
-import Container from "@mui/material/Container";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-
 import { getDonationBySession } from "@/server/donations/queries";
 import { getDeps, isMockMode } from "@/server/env";
 
@@ -55,18 +48,18 @@ export default async function MockCheckoutPage({ params }: { params: Params }) {
   const amountThb = donationRow.amountSatang / 100;
 
   return (
-    <Container maxWidth="xs" sx={{ py: 8 }}>
-      <Card sx={{ p: 4, textAlign: "center" }}>
-        <Stack spacing={3} sx={{ alignItems: "center" }}>
-          <Chip label="โหมดทดสอบ — ไม่มีการตัดเงินจริง" color="warning" />
-          <Typography variant="h6">{donationRow.channelName}</Typography>
-          <Box>
+    <div className="mx-auto max-w-xs py-8">
+      <div className="card bg-base-100 shadow p-8 text-center">
+        <div className="flex flex-col items-center gap-6">
+          <div className="badge badge-warning">โหมดทดสอบ — ไม่มีการตัดเงินจริง</div>
+          <h2 className="text-xl font-medium">{donationRow.channelName}</h2>
+          <div>
             <QrPlaceholder />
-          </Box>
-          <Typography variant="h4">{amountThb.toLocaleString("th-TH")} บาท</Typography>
+          </div>
+          <p className="text-3xl font-medium">{amountThb.toLocaleString("th-TH")} บาท</p>
           <CheckoutActions sessionId={sessionId} />
-        </Stack>
-      </Card>
-    </Container>
+        </div>
+      </div>
+    </div>
   );
 }

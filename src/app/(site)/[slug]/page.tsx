@@ -1,14 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import Alert from "@mui/material/Alert";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import Container from "@mui/material/Container";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-
 import { getDeps } from "@/server/env";
 import { getPublicTipPage } from "@/server/tip-page/tip-page";
 
@@ -66,48 +58,44 @@ export default async function TipPage({ params }: { params: Params }) {
   };
 
   return (
-    <Container maxWidth="xs" sx={{ py: 8 }}>
+    <div className="mx-auto flex max-w-xs flex-col gap-6 py-8">
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <Stack spacing={3}>
-        <Card sx={{ p: 4, textAlign: "center" }}>
-          <Typography variant="h4" sx={{ mb: 2 }}>
-            {page.channelName}
-          </Typography>
-          {page.links.length > 0 && (
-            <Stack spacing={1}>
-              {page.links.map((link) => (
-                <Button
-                  key={link.url}
-                  component="a"
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  variant="outlined"
-                  fullWidth
-                >
-                  {link.label}
-                </Button>
-              ))}
-            </Stack>
-          )}
-        </Card>
-
-        {page.accepting ? (
-          <TipForm
-            slug={page.slug}
-            minThb={Number(deps.env.MIN_DONATION_THB)}
-            maxThb={Number(deps.env.MAX_DONATION_THB)}
-          />
-        ) : (
-          <Card sx={{ p: 4 }}>
-            <Alert severity="info">ยังไม่เปิดรับโดเนท</Alert>
-          </Card>
+      <div className="card bg-base-100 shadow p-8 text-center">
+        <h1 className="mb-2 text-3xl font-medium">{page.channelName}</h1>
+        {page.links.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {page.links.map((link) => (
+              <a
+                key={link.url}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-outline btn-block"
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
         )}
-      </Stack>
-    </Container>
+      </div>
+
+      {page.accepting ? (
+        <TipForm
+          slug={page.slug}
+          minThb={Number(deps.env.MIN_DONATION_THB)}
+          maxThb={Number(deps.env.MAX_DONATION_THB)}
+        />
+      ) : (
+        <div className="card bg-base-100 shadow p-8">
+          <div role="alert" className="alert alert-info">
+            <span>ยังไม่เปิดรับโดเนท</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

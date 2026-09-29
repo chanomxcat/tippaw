@@ -3,13 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import Alert from "@mui/material/Alert";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import CircularProgress from "@mui/material/CircularProgress";
-import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
-
 const POLL_INTERVAL_MS = 2000;
 const MAX_WAIT_MS = 5 * 60 * 1000;
 
@@ -69,39 +62,45 @@ export function ResultPoller({ donationId, slug, successMessage, failureMessage 
 
   if (status === "pending") {
     return (
-      <Card sx={{ p: 4, textAlign: "center" }}>
-        <Stack spacing={2} sx={{ alignItems: "center" }}>
-          <CircularProgress />
-          <Typography>กำลังตรวจสอบการชำระเงิน...</Typography>
-        </Stack>
-      </Card>
+      <div className="card bg-base-100 shadow p-8 text-center">
+        <div className="flex flex-col items-center gap-4">
+          <span className="loading loading-spinner" />
+          <p>กำลังตรวจสอบการชำระเงิน...</p>
+        </div>
+      </div>
     );
   }
 
   if (status === "paid") {
     return (
-      <Card sx={{ p: 4 }}>
-        <Alert severity="success">{successMessage || "ขอบคุณสำหรับการสนับสนุน!"}</Alert>
-      </Card>
+      <div className="card bg-base-100 shadow p-8">
+        <div role="alert" className="alert alert-success">
+          <span>{successMessage || "ขอบคุณสำหรับการสนับสนุน!"}</span>
+        </div>
+      </div>
     );
   }
 
   if (status === "failed") {
     return (
-      <Card sx={{ p: 4 }}>
-        <Stack spacing={2}>
-          <Alert severity="error">{failureMessage || "การชำระเงินไม่สำเร็จ"}</Alert>
-          <Button variant="contained" onClick={() => router.push(`/${slug}`)}>
+      <div className="card bg-base-100 shadow p-8">
+        <div className="flex flex-col gap-4">
+          <div role="alert" className="alert alert-error">
+            <span>{failureMessage || "การชำระเงินไม่สำเร็จ"}</span>
+          </div>
+          <button type="button" className="btn btn-primary" onClick={() => router.push(`/${slug}`)}>
             ลองอีกครั้ง
-          </Button>
-        </Stack>
-      </Card>
+          </button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card sx={{ p: 4 }}>
-      <Alert severity="warning">ยังไม่ได้รับการยืนยันการชำระเงิน</Alert>
-    </Card>
+    <div className="card bg-base-100 shadow p-8">
+      <div role="alert" className="alert alert-warning">
+        <span>ยังไม่ได้รับการยืนยันการชำระเงิน</span>
+      </div>
+    </div>
   );
 }

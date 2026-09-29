@@ -1,7 +1,5 @@
 import { notFound } from "next/navigation";
 
-import Container from "@mui/material/Container";
-
 import { getDeps } from "@/server/env";
 import { getPublicTipPage } from "@/server/tip-page/tip-page";
 
@@ -26,13 +24,13 @@ export default async function DonationResultPage({
   if (!page) notFound();
 
   return (
-    <Container maxWidth="xs" sx={{ py: 8 }}>
+    <div className="mx-auto max-w-xs py-8">
       <ResultPoller
         donationId={d}
         slug={page.slug}
         successMessage={page.successMessage}
         failureMessage={page.failureMessage}
       />
-    </Container>
+    </div>
   );
 }
