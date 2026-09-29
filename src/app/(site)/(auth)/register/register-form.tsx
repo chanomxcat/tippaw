@@ -58,7 +58,7 @@ export function RegisterForm() {
 
           <div className="flex flex-col gap-1">
             <label htmlFor="register-username" className="label">
-              <span className="label-text">ชื่อผู้ใช้</span>
+              <span>ชื่อผู้ใช้</span>
             </label>
             <input
               id="register-username"
@@ -72,7 +72,7 @@ export function RegisterForm() {
 
           <div className="flex flex-col gap-1">
             <label htmlFor="register-password" className="label">
-              <span className="label-text">รหัสผ่าน</span>
+              <span>รหัสผ่าน</span>
             </label>
             <input
               id="register-password"
@@ -87,7 +87,7 @@ export function RegisterForm() {
 
           <div className="flex flex-col gap-1">
             <label htmlFor="register-invite-code" className="label">
-              <span className="label-text">Invite code</span>
+              <span>Invite code</span>
             </label>
             <input
               id="register-invite-code"

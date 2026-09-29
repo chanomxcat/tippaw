@@ -203,7 +203,7 @@ export function AlertSettingsForm({
           <h2 className="text-lg font-semibold">Overlay URL</h2>
           <div className="flex flex-col gap-1">
             <label htmlFor="alert-overlay-url" className="label">
-              <span className="label-text">Overlay URL</span>
+              <span>Overlay URL</span>
             </label>
             <div className="join w-full">
               <input
@@ -254,7 +254,7 @@ export function AlertSettingsForm({
 
             <div className="flex flex-col gap-1">
               <label htmlFor="alert-min-amount" className="label">
-                <span className="label-text">ยอดขั้นต่ำที่จะแสดง (บาท)</span>
+                <span>ยอดขั้นต่ำที่จะแสดง (บาท)</span>
               </label>
               <input
                 id="alert-min-amount"
@@ -270,7 +270,7 @@ export function AlertSettingsForm({
 
             <div className="flex flex-col gap-1">
               <label htmlFor="alert-message-template" className="label">
-                <span className="label-text">ข้อความ template</span>
+                <span>ข้อความ template</span>
               </label>
               <textarea
                 id="alert-message-template"
@@ -278,16 +278,19 @@ export function AlertSettingsForm({
                 rows={2}
                 value={messageTemplate}
                 onChange={(e) => setMessageTemplate(e.target.value)}
+                aria-describedby="alert-message-template-hint"
                 maxLength={200}
                 required
               />
-              <span className="text-base-content/60 text-xs">ใช้ {"{name} {amount} {message}"} ได้</span>
+              <span id="alert-message-template-hint" className="text-base-content/60 text-xs">
+                ใช้ {"{name} {amount} {message}"} ได้
+              </span>
             </div>
 
             <ColorField label="สีข้อความ" value={textColor} onChange={setTextColor} />
 
             <div className="flex flex-col gap-1">
-              <span className="label-text">ขนาดตัวอักษร: {fontSize}px</span>
+              <span>ขนาดตัวอักษร: {fontSize}px</span>
               <input
                 type="range"
                 aria-label="ขนาดตัวอักษร"
@@ -301,7 +304,7 @@ export function AlertSettingsForm({
 
             <div className="flex flex-col gap-1">
               <label htmlFor="alert-image-url" className="label">
-                <span className="label-text">รูป (URL)</span>
+                <span>รูป (URL)</span>
               </label>
               <input
                 id="alert-image-url"
@@ -319,7 +322,7 @@ export function AlertSettingsForm({
             <div className="flex flex-col gap-2">
               <div className="flex flex-col gap-1">
                 <label htmlFor="alert-sound-select" className="label">
-                  <span className="label-text">เสียง</span>
+                  <span>เสียง</span>
                 </label>
                 <select
                   id="alert-sound-select"
@@ -338,7 +341,7 @@ export function AlertSettingsForm({
               {soundMode === "custom" && (
                 <div className="flex flex-col gap-1">
                   <label htmlFor="alert-custom-sound-url" className="label">
-                    <span className="label-text">URL เสียง</span>
+                    <span>URL เสียง</span>
                   </label>
                   <input
                     id="alert-custom-sound-url"
@@ -357,7 +360,7 @@ export function AlertSettingsForm({
             <div className="flex gap-4">
               <div className="flex flex-1 flex-col gap-1">
                 <label htmlFor="alert-animation-in" className="label">
-                  <span className="label-text">Animation เข้า</span>
+                  <span>Animation เข้า</span>
                 </label>
                 <select
                   id="alert-animation-in"
@@ -374,7 +377,7 @@ export function AlertSettingsForm({
               </div>
               <div className="flex flex-1 flex-col gap-1">
                 <label htmlFor="alert-animation-out" className="label">
-                  <span className="label-text">Animation ออก</span>
+                  <span>Animation ออก</span>
                 </label>
                 <select
                   id="alert-animation-out"
@@ -393,7 +396,7 @@ export function AlertSettingsForm({
 
             <div className="flex flex-col gap-1">
               <label htmlFor="alert-duration" className="label">
-                <span className="label-text">ระยะเวลาแสดง (วินาที)</span>
+                <span>ระยะเวลาแสดง (วินาที)</span>
               </label>
               <input
                 id="alert-duration"

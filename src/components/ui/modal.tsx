@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 
 // ----------------------------------------------------------------------
 // The second shared UI primitive of the MUI -> Tailwind/daisyUI migration.
@@ -21,6 +21,7 @@ export type ModalProps = {
 };
 
 export function Modal({ open, title, children, onClose }: ModalProps) {
+  const titleId = useId();
   const ref = useRef<HTMLDialogElement>(null);
   // Set right before an effect-driven `dialog.close()` so the `close` event
   // that call dispatches can be told apart from a user-initiated close (native
@@ -53,9 +54,11 @@ export function Modal({ open, title, children, onClose }: ModalProps) {
   // already leads to `close` firing right after by default, so listening on
   // both would call `onClose` twice per Escape press.
   return (
-    <dialog ref={ref} className="modal" onClose={handleClose}>
+    <dialog ref={ref} className="modal" aria-labelledby={titleId} onClose={handleClose}>
       <div className="modal-box">
-        <h3 className="text-lg font-bold">{title}</h3>
+        <h3 id={titleId} className="text-lg font-bold">
+          {title}
+        </h3>
         {children}
       </div>
       <form method="dialog" className="modal-backdrop">

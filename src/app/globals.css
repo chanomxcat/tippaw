@@ -12,16 +12,29 @@
   --color-secondary: #F8B2B2;       /* secondary.main */
   --color-secondary-content: #403D88; /* ห้ามใช้ตัวขาวบน secondary — ตามสเปกหลัก */
   --color-accent: #403D88;          /* primary.dark เดิม ใช้เป็น accent */
+  --color-accent-content: #FFFFFF;
   --color-neutral: #1C252E;
+  --color-neutral-content: #FFFFFF;
   --color-base-100: #FFFFFF;
   --color-base-200: #F4F6F8;
   --color-base-300: #DFE3E8;
+  --color-base-content: #1C252E;
   --color-info: #00B8D9;
+  --color-info-content: #FFFFFF;
   --color-success: #22C55E;
+  --color-success-content: #ffffff;
   --color-warning: #FFAB00;
+  --color-warning-content: #1C252E;
   --color-error: #FF5630;
+  --color-error-content: #FFFFFF;
   --radius-box: 0.75rem;
   --radius-field: 0.5rem;
+  --radius-selector: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
 }
 
 @plugin "daisyui/theme" {
@@ -32,14 +45,27 @@
   --color-secondary: #F8B2B2;
   --color-secondary-content: #2A2860;
   --color-accent: #E7D6E3;
+  --color-accent-content: #1C252E;
   --color-neutral: #F4F6F8;
+  --color-neutral-content: #1C252E;
   --color-base-100: #1C252E;
   --color-base-200: #141A21;
   --color-base-300: #2A323C;
+  --color-base-content: #F4F6F8;
   --color-info: #61F3F3;
+  --color-info-content: #1C252E; /* bg เป็นสีอ่อน (คำนวณ contrast แล้ว ~11.6:1 ดีกว่าตัวขาว ~1.3:1) */
   --color-success: #77ED8B;
+  --color-success-content: #1C252E; /* bg เป็นสีอ่อนเช่นกัน ~10.6:1 vs ~1.5:1 */
   --color-warning: #FFD666;
+  --color-warning-content: #1C252E;
   --color-error: #FFAC82;
+  --color-error-content: #1C252E; /* bg เป็นสีส้มอ่อน ~8.5:1 vs ~1.8:1 */
+  --radius-selector: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
 }
 
 @theme {

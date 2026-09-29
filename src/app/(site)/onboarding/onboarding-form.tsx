@@ -57,7 +57,7 @@ export function OnboardingForm({ needsInvite }: OnboardingFormProps) {
           {needsInvite && (
             <div className="flex flex-col gap-1">
               <label htmlFor="onboarding-invite-code" className="label">
-                <span className="label-text">Invite code</span>
+                <span>Invite code</span>
               </label>
               <input
                 id="onboarding-invite-code"
@@ -71,17 +71,18 @@ export function OnboardingForm({ needsInvite }: OnboardingFormProps) {
 
           <div className="flex flex-col gap-1">
             <label htmlFor="onboarding-slug" className="label">
-              <span className="label-text">Slug</span>
+              <span>Slug</span>
             </label>
             <input
               id="onboarding-slug"
               className="input w-full"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
+              aria-describedby="onboarding-slug-hint"
               required
             />
             <div className="label">
-              <span className="label-text-alt">{`tippaw.../${slugPreview}`}</span>
+              <span id="onboarding-slug-hint" className="text-xs">{`tippaw.../${slugPreview}`}</span>
             </div>
           </div>
 

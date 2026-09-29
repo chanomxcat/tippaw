@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
 
@@ -17,6 +17,7 @@ export type ColorFieldProps = {
  * once the text is a valid `#RRGGBB` color.
  */
 export function ColorField({ label, value, onChange }: ColorFieldProps) {
+  const errorId = useId();
   const [text, setText] = useState(value);
 
   useEffect(() => {
@@ -33,15 +34,17 @@ export function ColorField({ label, value, onChange }: ColorFieldProps) {
   return (
     <div className="flex items-start gap-3">
       <label className="flex flex-col gap-1">
-        <span className="label-text">{label}</span>
+        <span>{label}</span>
         <input
           type="text"
           aria-label={label}
+          aria-invalid={invalid}
+          aria-describedby={errorId}
           className={`input input-sm ${invalid ? "input-error" : ""}`}
           value={text}
           onChange={(e) => handleChange(e.target.value)}
         />
-        <span className={`text-xs ${invalid ? "text-error" : "text-transparent"}`}>
+        <span id={errorId} className={`text-xs ${invalid ? "text-error" : "text-transparent"}`}>
           ต้องเป็นรหัสสี hex 6 หลัก เช่น #FFFFFF
         </span>
       </label>

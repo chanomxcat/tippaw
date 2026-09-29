@@ -90,7 +90,7 @@ export function LoginForm({ hasGoogle, hasStreamlabs }: LoginFormProps) {
 
           <div className="flex flex-col gap-1">
             <label htmlFor="login-username" className="label">
-              <span className="label-text">ชื่อผู้ใช้</span>
+              <span>ชื่อผู้ใช้</span>
             </label>
             <input
               id="login-username"
@@ -104,7 +104,7 @@ export function LoginForm({ hasGoogle, hasStreamlabs }: LoginFormProps) {
 
           <div className="flex flex-col gap-1">
             <label htmlFor="login-password" className="label">
-              <span className="label-text">รหัสผ่าน</span>
+              <span>รหัสผ่าน</span>
             </label>
             <input
               id="login-password"

@@ -40,9 +40,9 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
           <button
             type="button"
             aria-label="บัญชีผู้ใช้"
-            className="btn btn-circle btn-ghost avatar placeholder"
+            className="btn btn-circle btn-ghost avatar avatar-placeholder"
           >
-            <div className="bg-neutral text-neutral-content w-10 rounded-full">
+            <div className="bg-neutral text-neutral-content size-10 rounded-full">
               <span>{user.name.charAt(0).toUpperCase()}</span>
             </div>
           </button>

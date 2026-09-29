@@ -215,7 +215,7 @@ export function InvitesClient({ initialInvites }: { initialInvites: InviteViewRo
                 checked={mode === "random"}
                 onChange={() => setMode("random")}
               />
-              <span className="label-text">สุ่ม</span>
+              <span>สุ่ม</span>
             </label>
             <label className="label cursor-pointer gap-2">
               <input
@@ -226,13 +226,13 @@ export function InvitesClient({ initialInvites }: { initialInvites: InviteViewRo
                 checked={mode === "custom"}
                 onChange={() => setMode("custom")}
               />
-              <span className="label-text">กำหนดเอง</span>
+              <span>กำหนดเอง</span>
             </label>
           </div>
           {mode === "custom" && (
             <div className="flex flex-col gap-1">
               <label htmlFor="invite-code" className="label">
-                <span className="label-text">โค้ด</span>
+                <span>โค้ด</span>
               </label>
               <input
                 id="invite-code"
@@ -245,7 +245,7 @@ export function InvitesClient({ initialInvites }: { initialInvites: InviteViewRo
           )}
           <div className="flex flex-col gap-1">
             <label htmlFor="invite-note" className="label">
-              <span className="label-text">หมายเหตุ</span>
+              <span>หมายเหตุ</span>
             </label>
             <input
               id="invite-note"
@@ -257,7 +257,7 @@ export function InvitesClient({ initialInvites }: { initialInvites: InviteViewRo
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="invite-quota" className="label">
-              <span className="label-text">โควตา</span>
+              <span>โควตา</span>
             </label>
             <input
               id="invite-quota"
@@ -265,14 +265,17 @@ export function InvitesClient({ initialInvites }: { initialInvites: InviteViewRo
               className="input w-full"
               value={quota}
               onChange={(e) => setQuota(e.target.value)}
+              aria-describedby="invite-quota-hint"
               min={1}
               max={10000}
             />
-            <span className="text-base-content/60 text-xs">เว้นว่างสำหรับไม่จำกัด</span>
+            <span id="invite-quota-hint" className="text-base-content/60 text-xs">
+              เว้นว่างสำหรับไม่จำกัด
+            </span>
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="invite-expires-at" className="label">
-              <span className="label-text">วันหมดอายุ</span>
+              <span>วันหมดอายุ</span>
             </label>
             <input
               id="invite-expires-at"
@@ -280,8 +283,11 @@ export function InvitesClient({ initialInvites }: { initialInvites: InviteViewRo
               className="input w-full"
               value={expiresAt}
               onChange={(e) => setExpiresAt(e.target.value)}
+              aria-describedby="invite-expires-at-hint"
             />
-            <span className="text-base-content/60 text-xs">เว้นว่างสำหรับไม่มีวันหมดอายุ</span>
+            <span id="invite-expires-at-hint" className="text-base-content/60 text-xs">
+              เว้นว่างสำหรับไม่มีวันหมดอายุ
+            </span>
           </div>
           <div className="modal-action">
             <button type="button" className="btn" onClick={() => setDialogOpen(false)}>

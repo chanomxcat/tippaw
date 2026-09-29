@@ -111,7 +111,7 @@ export function TipForm({ slug, minThb, maxThb }: TipFormProps) {
 
         <div className="flex flex-col gap-1">
           <label htmlFor="tip-donor-name" className="label">
-            <span className="label-text">ชื่อของคุณ</span>
+            <span>ชื่อของคุณ</span>
           </label>
           <input
             id="tip-donor-name"
@@ -129,31 +129,32 @@ export function TipForm({ slug, minThb, maxThb }: TipFormProps) {
             checked={remember}
             onChange={(e) => handleRememberChange(e.target.checked)}
           />
-          <span className="label-text">จดจำชื่อ</span>
+          <span>จดจำชื่อ</span>
         </label>
 
         <div className="flex flex-col gap-1">
           <label htmlFor="tip-message" className="label">
-            <span className="label-text">ข้อความถึงสตรีมเมอร์</span>
+            <span>ข้อความถึงสตรีมเมอร์</span>
           </label>
           <textarea
             id="tip-message"
             className="textarea w-full"
             rows={2}
             value={message}
+            aria-describedby="tip-message-hint"
             onChange={(e) => {
               const value = e.target.value;
               if (charLength(value) <= MESSAGE_MAX_CHARS) setMessage(value);
             }}
           />
           <div className="label">
-            <span className="label-text-alt">{`${charLength(message)}/${MESSAGE_MAX_CHARS}`}</span>
+            <span id="tip-message-hint" className="text-xs">{`${charLength(message)}/${MESSAGE_MAX_CHARS}`}</span>
           </div>
         </div>
 
         <div className="flex flex-col gap-1">
           <label htmlFor="tip-amount" className="label">
-            <span className="label-text">จำนวนเงิน (บาท)</span>
+            <span>จำนวนเงิน (บาท)</span>
           </label>
           <input
             id="tip-amount"
@@ -161,10 +162,11 @@ export function TipForm({ slug, minThb, maxThb }: TipFormProps) {
             className="input w-full"
             value={amountInput}
             onChange={(e) => setAmountInput(e.target.value)}
+            aria-describedby="tip-amount-hint"
             required
           />
           <div className="label">
-            <span className="label-text-alt">{`ขั้นต่ำ ${minThb} บาท สูงสุด ${maxThb} บาท`}</span>
+            <span id="tip-amount-hint" className="text-xs">{`ขั้นต่ำ ${minThb} บาท สูงสุด ${maxThb} บาท`}</span>
           </div>
         </div>
 

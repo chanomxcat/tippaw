@@ -87,7 +87,7 @@ export function ProfileClient({ slug: initialSlug, payout: initialPayout, baseUr
 
           <div className="flex flex-col gap-1">
             <label htmlFor="profile-slug" className="label">
-              <span className="label-text">Slug</span>
+              <span>Slug</span>
             </label>
             <input
               id="profile-slug"

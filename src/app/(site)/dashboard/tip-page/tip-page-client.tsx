@@ -94,7 +94,7 @@ export function TipPageClient({
 
           <div className="flex flex-col gap-1">
             <label htmlFor="tip-page-channel-name" className="label">
-              <span className="label-text">ชื่อช่อง</span>
+              <span>ชื่อช่อง</span>
             </label>
             <input
               id="tip-page-channel-name"
@@ -107,7 +107,7 @@ export function TipPageClient({
           </div>
 
           <div className="flex flex-col gap-2">
-            <span className="label-text">ลิงก์</span>
+            <span className="label">ลิงก์</span>
             {links.map((link, index) => (
               <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <input
@@ -167,7 +167,7 @@ export function TipPageClient({
 
           <div className="flex flex-col gap-1">
             <label htmlFor="tip-page-success-message" className="label">
-              <span className="label-text">ข้อความสำเร็จ</span>
+              <span>ข้อความสำเร็จ</span>
             </label>
             <textarea
               id="tip-page-success-message"
@@ -182,7 +182,7 @@ export function TipPageClient({
 
           <div className="flex flex-col gap-1">
             <label htmlFor="tip-page-failure-message" className="label">
-              <span className="label-text">ข้อความไม่สำเร็จ</span>
+              <span>ข้อความไม่สำเร็จ</span>
             </label>
             <textarea
               id="tip-page-failure-message"
