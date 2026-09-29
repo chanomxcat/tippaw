@@ -17,9 +17,14 @@ GOOGLE_CLIENT_SECRET=
 # --- Streamlabs OAuth (mock/real — see README.md "สลับไปใช้ของจริง") ---
 STREAMLABS_CLIENT_ID=mock-client
 STREAMLABS_CLIENT_SECRET=mock-secret
-STREAMLABS_AUTHORIZE_URL=http://localhost:8787/mock/streamlabs/authorize
-STREAMLABS_TOKEN_URL=http://localhost:8787/api/mock/streamlabs/token
-STREAMLABS_USERINFO_URL=http://localhost:8787/api/mock/streamlabs/userinfo
+# These three point at the REAL Streamlabs endpoints and are unused while
+# MOCK_MODE=true — in mock mode, auth.ts always sends the browser to the
+# local /mock/streamlabs/authorize page regardless of what's set here, and
+# token/userinfo are resolved in-process (a Worker can't fetch itself).
+# Leave them blank until you switch to real Streamlabs (README.md §9).
+STREAMLABS_AUTHORIZE_URL=
+STREAMLABS_TOKEN_URL=
+STREAMLABS_USERINFO_URL=
 
 # --- Mock mode (payments + Streamlabs) ---
 # "true" = /mock/* and /api/mock/* routes are enabled and MockPaymentProvider
@@ -28,6 +33,12 @@ MOCK_MODE=true
 # "mock" | "stripe" — which payment provider src/server/payments/index.ts picks.
 PAYMENT_PROVIDER=mock
 MOCK_WEBHOOK_SECRET=dev-mock-webhook-secret
+# The mock Streamlabs login (button + /mock/streamlabs/authorize page) is
+# UNAUTHENTICATED — typing any name signs in as that streamer. It only works
+# when this is ALSO "true" (never set in wrangler.jsonc, so a deployed
+# worker has it off by default even with MOCK_MODE=true). Keep "true" here
+# for local dev/e2e; see README's mock-mode caveats section.
+MOCK_STREAMLABS_LOGIN=true
 
 # --- Stripe (phase 1: PAYMENT_PROVIDER=stripe is wired to a provider stub
 # only — see src/server/payments/stripe.ts — so these aren't exercised yet) ---

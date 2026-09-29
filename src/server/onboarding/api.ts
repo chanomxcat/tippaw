@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { apiRequireSession } from "@/server/auth/session";
 import type { Deps } from "@/server/env";
-import { jsonError, parseJson } from "@/server/http";
+import { clientIp, jsonError, parseJson } from "@/server/http";
 
 import { completeOnboarding } from "./onboarding";
 
@@ -27,7 +27,7 @@ export async function handleOnboarding(deps: Deps, req: Request): Promise<Respon
   const { inviteCode, slug } = parsed.data;
 
   if (inviteCode) {
-    const ip = req.headers.get("cf-connecting-ip") ?? "local";
+    const ip = clientIp(req);
     const { success } = await deps.env.INVITE_RATE_LIMITER.limit({ key: ip });
     if (!success) return jsonError(429, "rate_limited");
   }

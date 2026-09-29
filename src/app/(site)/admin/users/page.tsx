@@ -9,6 +9,7 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 
 import { listUsers } from "@/server/admin/users";
+import { requireAdmin } from "@/server/auth/page-guards";
 import { getDeps } from "@/server/env";
 
 const dateFormatter = new Intl.DateTimeFormat("th-TH", {
@@ -18,6 +19,10 @@ const dateFormatter = new Intl.DateTimeFormat("th-TH", {
 });
 
 export default async function AdminUsersPage() {
+  // Layout-only guards aren't re-run on a partial RSC render (e.g. a
+  // client-side navigation that only re-renders this segment), so each admin
+  // page must also guard itself — not just rely on admin/layout.tsx.
+  await requireAdmin();
   const deps = await getDeps();
   const users = await listUsers(deps);
 

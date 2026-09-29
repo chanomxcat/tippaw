@@ -31,6 +31,7 @@ import Typography from "@mui/material/Typography";
 
 import { Iconify } from "@/ui/minimal/components/iconify";
 import { inviteStatusLabel } from "@/server/admin/invite-status";
+import { bangkokEndOfDay } from "@/server/lib/time";
 
 export type InviteViewRow = {
   code: string;
@@ -94,7 +95,7 @@ export function InvitesClient({ initialInvites }: { initialInvites: InviteViewRo
           code: mode === "custom" ? code : undefined,
           note: note.trim() ? note.trim() : undefined,
           maxUses: quota.trim() ? Number(quota) : null,
-          expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+          expiresAt: expiresAt ? (bangkokEndOfDay(expiresAt) ?? new Date(expiresAt)).toISOString() : null,
         }),
       });
       if (!res.ok) {

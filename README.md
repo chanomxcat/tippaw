@@ -119,7 +119,7 @@ ${BETTER_AUTH_URL}/api/auth/callback/google
 
 ### Streamlabs
 
-เฟส 1 นี้ยังไม่ต่อ Streamlabs จริง — ปุ่ม "เข้าสู่ระบบด้วย Streamlabs" ชี้ไปที่หน้าจำลอง `/mock/streamlabs/authorize` เสมอเมื่อ `MOCK_MODE=true` (ดูหัวข้อ 9 ด้านล่างสำหรับวิธีสลับเป็นของจริงในอนาคต) redirect URI ของฝั่ง Streamlabs เมื่อนั้นจะเป็น:
+เฟส 1 นี้ยังไม่ต่อ Streamlabs จริง — ปุ่ม "เข้าสู่ระบบด้วย Streamlabs" ชี้ไปที่หน้าจำลอง `/mock/streamlabs/authorize` เสมอเมื่อ `MOCK_MODE=true` **และ** `MOCK_STREAMLABS_LOGIN=true` (ดูหัวข้อ 9 ด้านล่างสำหรับวิธีสลับเป็นของจริงในอนาคต, และหัวข้อ "ข้อควรระวังของโหมด mock" ด้านล่างว่าทำไมต้องมีตัวแปรที่สองนี้) ค่าใน `STREAMLABS_AUTHORIZE_URL`/`STREAMLABS_TOKEN_URL`/`STREAMLABS_USERINFO_URL` **ไม่มีผลใดๆ ในโหมด mock** — ใช้เฉพาะตอนสลับไปใช้ Streamlabs จริงเท่านั้น redirect URI ของฝั่ง Streamlabs เมื่อนั้นจะเป็น:
 
 ```
 ${BETTER_AUTH_URL}/api/auth/callback/streamlabs
@@ -150,6 +150,16 @@ Cloudflare Workers แผนฟรีจำกัด CPU **10ms ต่อ reques
 - **Streamlabs:** เมื่อได้ client id/secret จริงจาก Streamlabs API แล้ว ตั้ง `STREAMLABS_AUTHORIZE_URL`, `STREAMLABS_TOKEN_URL`, `STREAMLABS_USERINFO_URL` ให้ชี้ไป endpoint จริงของ Streamlabs (แทนที่ `/mock/streamlabs/*` ในเครื่อง) พร้อม secret `STREAMLABS_CLIENT_ID`, `STREAMLABS_CLIENT_SECRET` จริง — ไม่ต้องแก้โค้ด เพราะ auth ใช้ `genericOAuth` อยู่แล้ว แค่เปลี่ยนตัวแปรที่ปลายทาง
 
 ปิด `MOCK_MODE` แล้ว golden-path e2e test (`tests/e2e/golden-path.spec.ts`) และสเปกอื่นใน `tests/e2e/` จะใช้งานไม่ได้ (พึ่งพา `/mock/*` routes) — ให้รันเฉพาะ unit/integration test แทนถ้าต้อง CI กับของจริง
+
+### ข้อควรระวังของโหมด mock (เฟส 1)
+
+โหมด mock (`MOCK_MODE=true`) สะดวกสำหรับพัฒนา/ทดสอบ แต่มีจุดที่ **ไม่ปลอดภัยสำหรับสตรีมเมอร์จริง** ถ้าเปิดทิ้งไว้บน worker ที่ deploy จริง:
+
+- **Mock checkout ไม่มีการยืนยันตัวตนหรือการชำระเงินจริง** — ใครก็ตามที่รู้ (หรือเดา) URL ของหน้า checkout สามารถกดยืนยันแล้วยิง alert ปลอมเข้า overlay ได้ฟรีโดยไม่ต้องจ่ายเงินจริง
+- **Mock Streamlabs login ไม่มีการยืนยันตัวตนเช่นกัน** — ใครก็ได้ที่พิมพ์ชื่อผู้ใช้ Streamlabs ปลอมช่องเดียวกันสามารถเข้าสู่ระบบเป็นสตรีมเมอร์คนนั้นได้ทันที (ถ้าเคยสมัครไว้แล้วจะได้ล็อกอินเป็นบัญชีเดิม) ด้วยเหตุนี้ ปุ่ม/หน้า/route ของ mock Streamlabs login (`/mock/streamlabs/authorize`, `/api/mock/streamlabs/authorize`, ปุ่มในหน้า login) จึงต้องเปิดด้วยตัวแปรแยกต่างหาก **`MOCK_STREAMLABS_LOGIN=true`** (นอกเหนือจาก `MOCK_MODE=true`) — ตัวแปรนี้ตั้งไว้แล้วใน `.dev.vars.example`/`.dev.vars.e2e` สำหรับ dev/e2e ในเครื่อง แต่**ไม่ได้ตั้งไว้ใน `wrangler.jsonc`** ดังนั้น worker ที่ deploy จริงจะปิดฟีเจอร์นี้เป็นค่าเริ่มต้นแม้ `MOCK_MODE` จะยังเป็น `true` อยู่ก็ตาม — **ห้ามตั้ง `MOCK_STREAMLABS_LOGIN=true` บน worker ที่มีสตรีมเมอร์จริงใช้งาน**
+- **Rate limit ของ mock checkout/onboarding เป็นแบบต่อ IP เท่านั้น** (ผ่าน Cloudflare Rate Limiting bindings) — ไม่ได้ผูกกับบัญชีผู้ใช้หรือ session จึงยังพอมีคนหลบผ่าน IP หลายตัวได้ ไม่ใช่การป้องกันที่สมบูรณ์
+
+สรุป: ปล่อย `MOCK_MODE=true` ไว้ได้สำหรับ demo/staging ที่ยังไม่มีเงินจริงเข้า แต่ **ก่อนให้สตรีมเมอร์จริงใช้งาน ต้องปิด `MOCK_MODE` (สลับไป Stripe จริงตามหัวข้อ 9) และไม่เปิด `MOCK_STREAMLABS_LOGIN` เด็ดขาด**
 
 ## 10. ตั้งค่า OBS (alert overlay)
 

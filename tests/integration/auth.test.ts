@@ -164,7 +164,7 @@ describe("createAuth", () => {
   });
 
   it("completes the mock Streamlabs OAuth flow in-process (no self-fetch)", async () => {
-    const deps = makeDeps({ MOCK_MODE: "true" });
+    const deps = makeDeps({ MOCK_MODE: "true", MOCK_STREAMLABS_LOGIN: "true" });
     const auth = createAuth(deps.env, deps.db);
 
     const start = await auth.handler(
@@ -203,6 +203,43 @@ describe("createAuth", () => {
     const [acct] = await deps.db.select().from(account).where(eq(account.userId, row!.id));
     expect(acct?.providerId).toBe("streamlabs");
     expect(acct?.accountId).toBe(`sl_${slName}`);
+  });
+
+  it("disables the mock Streamlabs provider when MOCK_MODE is true but MOCK_STREAMLABS_LOGIN is unset (deploy-safety default)", async () => {
+    const deps = makeDeps({ MOCK_MODE: "true", MOCK_STREAMLABS_LOGIN: undefined });
+    const auth = createAuth(deps.env, deps.db);
+
+    const res = await auth.handler(
+      new Request("http://localhost:8787/api/auth/sign-in/social", {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: "http://localhost:8787" },
+        body: JSON.stringify({ provider: "streamlabs", callbackURL: "/dashboard" }),
+      }),
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it("always uses the local mock authorize path in mock mode, even when STREAMLABS_AUTHORIZE_URL points elsewhere", async () => {
+    const deps = makeDeps({
+      MOCK_MODE: "true",
+      MOCK_STREAMLABS_LOGIN: "true",
+      STREAMLABS_AUTHORIZE_URL: "http://example.com/not-the-mock-path",
+    });
+    const auth = createAuth(deps.env, deps.db);
+
+    const start = await auth.handler(
+      new Request("http://localhost:8787/api/auth/sign-in/social", {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: "http://localhost:8787" },
+        body: JSON.stringify({ provider: "streamlabs", callbackURL: "/dashboard" }),
+      }),
+    );
+    expect(start.status).toBe(200);
+    const { url } = (await start.json()) as { url: string };
+    const authorize = new URL(url);
+    expect(authorize.origin + authorize.pathname).toBe(
+      "http://localhost:8787/mock/streamlabs/authorize",
+    );
   });
 });
 

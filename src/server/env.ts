@@ -17,6 +17,7 @@ export type AppEnv = {
   STREAMLABS_TOKEN_URL?: string;
   STREAMLABS_USERINFO_URL?: string;
   MOCK_MODE: string;
+  MOCK_STREAMLABS_LOGIN?: string;
   PAYMENT_PROVIDER: "mock" | "stripe";
   MOCK_WEBHOOK_SECRET: string;
   MIN_DONATION_THB: string;
@@ -48,4 +49,16 @@ export async function getDeps(): Promise<Deps> {
 
 export function isMockMode(env: AppEnv): boolean {
   return env.MOCK_MODE === "true";
+}
+
+/**
+ * The mock Streamlabs login (button + `/mock/streamlabs/authorize` +
+ * `/api/mock/streamlabs/authorize`) is unauthenticated by design — typing
+ * any name signs in as that streamer. It must additionally be opted into
+ * with `MOCK_STREAMLABS_LOGIN=true`, which is set in `.dev.vars.example`/
+ * `.dev.vars.e2e` but never in `wrangler.jsonc`, so a deployed worker has it
+ * off by default even while `MOCK_MODE` stays "true" for mock payments.
+ */
+export function isStreamlabsMockLoginEnabled(env: AppEnv): boolean {
+  return isMockMode(env) && env.MOCK_STREAMLABS_LOGIN === "true";
 }

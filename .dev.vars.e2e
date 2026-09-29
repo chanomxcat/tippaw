@@ -3,6 +3,7 @@
 # before `next build`/`preview` starts. `.dev.vars` itself stays gitignored.
 
 MOCK_MODE=true
+MOCK_STREAMLABS_LOGIN=true
 BETTER_AUTH_SECRET=e2e-test-secret-not-for-production-use
 BETTER_AUTH_URL=http://localhost:8787
 

@@ -8,6 +8,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 
+import { requireAdmin } from "@/server/auth/page-guards";
 import { getDeps } from "@/server/env";
 import { listInviteUsers } from "@/server/invites/invites";
 
@@ -22,6 +23,8 @@ export default async function AdminInviteUsersPage({
 }: {
   params: Promise<{ code: string }>;
 }) {
+  // See admin/users/page.tsx for why this page also self-guards.
+  await requireAdmin();
   const { code } = await params;
   const deps = await getDeps();
   const users = await listInviteUsers(deps, code);

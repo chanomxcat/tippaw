@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import type { AppEnv } from "@/server/env";
 import type { RealtimeEvent } from "@/server/realtime/events";
+import { safeWebSocketClose } from "@/server/realtime/safe-close";
 
 /**
  * Durable Object hub for a single streamer's realtime overlay connections.
@@ -65,6 +66,6 @@ export class StreamerRoom extends DurableObject<AppEnv> {
     reason: string,
     _wasClean: boolean,
   ): Promise<void> {
-    ws.close(code, reason);
+    safeWebSocketClose(ws, code, reason);
   }
 }

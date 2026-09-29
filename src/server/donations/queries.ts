@@ -3,7 +3,7 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { donation, streamerProfile, tipPage } from "@/server/db/schema";
 import type { Deps } from "@/server/env";
 
-const PAGE_SIZE = 50;
+export const PAGE_SIZE = 50;
 
 export type DonationStatus = {
   status: "pending" | "paid" | "failed";

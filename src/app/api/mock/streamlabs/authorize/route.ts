@@ -1,5 +1,5 @@
 import { buildAuthorizeRedirect, isAllowedRedirectUri } from "@/server/auth/mock-streamlabs";
-import { getDeps, isMockMode } from "@/server/env";
+import { getDeps, isStreamlabsMockLoginEnabled } from "@/server/env";
 
 /**
  * Handles the mock Streamlabs "approve" form submission as a plain HTML
@@ -14,7 +14,7 @@ import { getDeps, isMockMode } from "@/server/env";
  */
 export async function POST(req: Request): Promise<Response> {
   const { env } = await getDeps();
-  if (!isMockMode(env)) {
+  if (!isStreamlabsMockLoginEnabled(env)) {
     return new Response("Not Found", { status: 404 });
   }
 

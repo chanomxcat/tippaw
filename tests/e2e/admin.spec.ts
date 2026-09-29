@@ -44,7 +44,15 @@ test.describe("admin CMS", () => {
     await expect(page).toHaveURL(/\/dashboard\/transactions$/);
 
     // A streamer can't reach the admin CMS — bounced back to the dashboard.
+    // Each admin page (not just the shared layout) must redirect on its own,
+    // since a partial RSC render doesn't re-run the layout's guard.
     await page.goto("/admin/invites");
+    await expect(page).toHaveURL(/\/dashboard/);
+
+    await page.goto("/admin/users");
+    await expect(page).toHaveURL(/\/dashboard/);
+
+    await page.goto("/admin/invites/E2E-CAT");
     await expect(page).toHaveURL(/\/dashboard/);
 
     // Log the streamer out and back in as the admin to check the quota.

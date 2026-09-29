@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { isAllowedRedirectUri } from "@/server/auth/mock-streamlabs";
-import { getDeps, isMockMode } from "@/server/env";
+import { getDeps, isStreamlabsMockLoginEnabled } from "@/server/env";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -15,7 +15,7 @@ export default async function MockStreamlabsAuthorizePage({
   searchParams: SearchParams;
 }) {
   const { env } = await getDeps();
-  if (!isMockMode(env)) notFound();
+  if (!isStreamlabsMockLoginEnabled(env)) notFound();
 
   const params = await searchParams;
   const redirectUri = first(params.redirect_uri);

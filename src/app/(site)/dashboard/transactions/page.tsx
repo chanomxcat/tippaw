@@ -10,13 +10,11 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 
 import { requireOnboarded } from "@/server/auth/page-guards";
-import { listPaidDonations } from "@/server/donations/queries";
+import { listPaidDonations, PAGE_SIZE } from "@/server/donations/queries";
 import { getDeps } from "@/server/env";
 import { formatThb } from "@/server/lib/money";
 
 import { ReplayButton } from "./ReplayButton";
-
-const PAGE_SIZE = 50;
 
 const dateFormatter = new Intl.DateTimeFormat("th-TH", {
   dateStyle: "medium",

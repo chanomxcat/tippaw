@@ -26,20 +26,33 @@ const wranglerBin = path.join(
   "wrangler.js",
 );
 
-type Args = { remote: boolean; code?: string };
+type Args = { remote: boolean; code?: string; codeMissingValue: boolean };
 
-function parseArgs(argv: string[]): Args {
+/**
+ * `--code` with no following value (either the last argv token, or
+ * immediately followed by another flag) must be a hard error — silently
+ * falling through to a random code would let a typo'd invocation like
+ * `--code --remote` mint an invite nobody asked for.
+ */
+export function parseArgs(argv: string[]): Args {
   let remote = false;
   let code: string | undefined;
+  let codeMissingValue = false;
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--remote") {
       remote = true;
     } else if (arg === "--code") {
-      code = argv[++i];
+      const value = argv[i + 1];
+      if (value === undefined || value.startsWith("--")) {
+        codeMissingValue = true;
+      } else {
+        code = value;
+        i++;
+      }
     }
   }
-  return { remote, code };
+  return { remote, code, codeMissingValue };
 }
 
 function runD1(sql: string, remote: boolean): void {
@@ -54,8 +67,13 @@ function runD1(sql: string, remote: boolean): void {
   );
 }
 
-function main(): void {
-  const { remote, code: rawCode } = parseArgs(process.argv.slice(2));
+export function main(): void {
+  const { remote, code: rawCode, codeMissingValue } = parseArgs(process.argv.slice(2));
+
+  if (codeMissingValue) {
+    console.error("--code requires a value (usage: admin-bootstrap-invite [--remote] [--code CODE])");
+    process.exit(1);
+  }
 
   let code: string;
   if (rawCode !== undefined) {
@@ -86,4 +104,7 @@ function main(): void {
   console.log(code);
 }
 
-main();
+const isDirectRun = fileURLToPath(import.meta.url) === path.resolve(process.argv[1] ?? "");
+if (isDirectRun) {
+  main();
+}

@@ -1,9 +1,12 @@
+import { requireAdmin } from "@/server/auth/page-guards";
 import { getDeps } from "@/server/env";
 import { listInvites } from "@/server/invites/invites";
 
 import { InvitesClient } from "./invites-client";
 
 export default async function AdminInvitesPage() {
+  // See admin/users/page.tsx for why this page also self-guards.
+  await requireAdmin();
   const deps = await getDeps();
   const invites = await listInvites(deps);
 

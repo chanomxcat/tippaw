@@ -5,7 +5,7 @@ import { admin, username } from "better-auth/plugins";
 import { genericOAuth, type GenericOAuthConfig } from "better-auth/plugins/generic-oauth";
 
 import * as schema from "@/server/db/schema";
-import { isMockMode, type AppEnv, type Db } from "@/server/env";
+import { isMockMode, isStreamlabsMockLoginEnabled, type AppEnv, type Db } from "@/server/env";
 
 import { exchangeCode, userInfo } from "./mock-streamlabs";
 import { hashPassword, verifyPassword } from "./pbkdf2";
@@ -36,13 +36,22 @@ const enforcePlaceholderSignUp = createAuthMiddleware(async (ctx) => {
 
 function streamlabsConfig(env: AppEnv): GenericOAuthConfig | null {
   if (isMockMode(env)) {
+    // The mock login is unauthenticated (typing any name signs in as that
+    // streamer), so it additionally requires MOCK_STREAMLABS_LOGIN=true —
+    // see isStreamlabsMockLoginEnabled. Without it, no streamlabs provider
+    // is registered at all (sign-in attempts 404), same as the real branch
+    // below with no client id configured.
+    if (!isStreamlabsMockLoginEnabled(env)) return null;
     return {
       providerId: "streamlabs",
       name: "Streamlabs",
       clientId: env.STREAMLABS_CLIENT_ID ?? "mock-client",
       clientSecret: env.STREAMLABS_CLIENT_SECRET ?? "mock-secret",
-      authorizationUrl:
-        env.STREAMLABS_AUTHORIZE_URL ?? new URL("/mock/streamlabs/authorize", env.BETTER_AUTH_URL).toString(),
+      // Always the local mock path — never STREAMLABS_AUTHORIZE_URL. That
+      // var is for the real Streamlabs endpoint (see .dev.vars.example);
+      // honoring it here in mock mode would silently send users to a
+      // real/placeholder URL instead of the in-process mock page.
+      authorizationUrl: new URL("/mock/streamlabs/authorize", env.BETTER_AUTH_URL).toString(),
       // No self-fetch on Workers: token + userinfo are resolved in-process.
       getToken: async ({ code }) => exchangeCode(code),
       getUserInfo: async (tokens) => (tokens.accessToken ? userInfo(tokens.accessToken) : null),
@@ -66,6 +75,11 @@ function streamlabsConfig(env: AppEnv): GenericOAuthConfig | null {
     tokenUrl: env.STREAMLABS_TOKEN_URL,
     userInfoUrl: env.STREAMLABS_USERINFO_URL,
   };
+}
+
+/** Whether the "เข้าสู่ระบบด้วย Streamlabs" button should be shown — mirrors streamlabsConfig's own gating (mock login flag in mock mode, real client config otherwise). */
+export function isStreamlabsConfigured(env: AppEnv): boolean {
+  return streamlabsConfig(env) !== null;
 }
 
 /**
