@@ -1,13 +1,3 @@
-import Card from "@mui/material/Card";
-import Stack from "@mui/material/Stack";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Typography from "@mui/material/Typography";
-
 import { listUsers } from "@/server/admin/users";
 import { requireAdmin } from "@/server/auth/page-guards";
 import { getDeps } from "@/server/env";
@@ -27,37 +17,37 @@ export default async function AdminUsersPage() {
   const users = await listUsers(deps);
 
   return (
-    <Stack spacing={3}>
-      <Typography variant="h4">ผู้ใช้</Typography>
+    <div className="flex max-w-7xl flex-col gap-6">
+      <h1 className="text-2xl font-semibold">ผู้ใช้</h1>
 
-      <Card>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ชื่อ</TableCell>
-                <TableCell>ชื่อผู้ใช้</TableCell>
-                <TableCell>Slug</TableCell>
-                <TableCell>ผู้ให้บริการ</TableCell>
-                <TableCell>Invite code</TableCell>
-                <TableCell>สร้างเมื่อ</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
+      <div className="card bg-base-100 shadow">
+        <div className="overflow-x-auto">
+          <table className="table w-full">
+            <thead>
+              <tr>
+                <th>ชื่อ</th>
+                <th>ชื่อผู้ใช้</th>
+                <th>Slug</th>
+                <th>ผู้ให้บริการ</th>
+                <th>Invite code</th>
+                <th>สร้างเมื่อ</th>
+              </tr>
+            </thead>
+            <tbody>
               {users.map((u) => (
-                <TableRow key={u.id}>
-                  <TableCell>{u.name}</TableCell>
-                  <TableCell>{u.username ?? "-"}</TableCell>
-                  <TableCell>{u.slug ?? "-"}</TableCell>
-                  <TableCell>{u.providers.length > 0 ? u.providers.join(", ") : "-"}</TableCell>
-                  <TableCell>{u.inviteCode ?? "-"}</TableCell>
-                  <TableCell>{dateFormatter.format(u.createdAt)}</TableCell>
-                </TableRow>
+                <tr key={u.id}>
+                  <td>{u.name}</td>
+                  <td>{u.username ?? "-"}</td>
+                  <td>{u.slug ?? "-"}</td>
+                  <td>{u.providers.length > 0 ? u.providers.join(", ") : "-"}</td>
+                  <td>{u.inviteCode ?? "-"}</td>
+                  <td>{dateFormatter.format(u.createdAt)}</td>
+                </tr>
               ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Card>
-    </Stack>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   );
 }

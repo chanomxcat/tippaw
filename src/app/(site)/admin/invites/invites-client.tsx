@@ -3,33 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import NextLink from "next/link";
+import { Copy, Link as LinkIcon } from "lucide-react";
 
-import Alert from "@mui/material/Alert";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import IconButton from "@mui/material/IconButton";
-import Link from "@mui/material/Link";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
-import Snackbar from "@mui/material/Snackbar";
-import Stack from "@mui/material/Stack";
-import Switch from "@mui/material/Switch";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-
-import { Iconify } from "@/ui/minimal/components/iconify";
+import { Modal } from "@/components/ui/modal";
+import { useToast } from "@/components/ui/toast";
 import { inviteStatusLabel } from "@/server/admin/invite-status";
 import { bangkokEndOfDay } from "@/server/lib/time";
 
@@ -63,6 +40,7 @@ function formatDate(iso: string | null): string {
 
 export function InvitesClient({ initialInvites }: { initialInvites: InviteViewRow[] }) {
   const router = useRouter();
+  const { show: showToast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [mode, setMode] = useState<"random" | "custom">("random");
   const [code, setCode] = useState("");
@@ -72,7 +50,6 @@ export function InvitesClient({ initialInvites }: { initialInvites: InviteViewRo
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [pendingCode, setPendingCode] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
   function resetForm() {
     setMode("random");
@@ -128,36 +105,36 @@ export function InvitesClient({ initialInvites }: { initialInvites: InviteViewRo
   function copyText(text: string, message: string) {
     navigator.clipboard
       ?.writeText(text)
-      .then(() => setToast(message))
-      .catch(() => setToast("คัดลอกไม่สำเร็จ"));
+      .then(() => showToast(message))
+      .catch(() => showToast("คัดลอกไม่สำเร็จ", "error"));
   }
 
   const now = new Date();
 
   return (
-    <Stack spacing={3}>
-      <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
-        <Typography variant="h4">Invite codes</Typography>
-        <Button variant="contained" onClick={() => setDialogOpen(true)}>
+    <div className="flex max-w-7xl flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Invite codes</h1>
+        <button type="button" className="btn btn-primary" onClick={() => setDialogOpen(true)}>
           สร้างโค้ด
-        </Button>
-      </Stack>
+        </button>
+      </div>
 
-      <Card>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>โค้ด</TableCell>
-                <TableCell>หมายเหตุ</TableCell>
-                <TableCell>ใช้แล้ว/โควตา</TableCell>
-                <TableCell>หมดอายุ</TableCell>
-                <TableCell>สถานะ</TableCell>
-                <TableCell>สร้างเมื่อ</TableCell>
-                <TableCell align="right">จัดการ</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
+      <div className="card bg-base-100 shadow">
+        <div className="overflow-x-auto">
+          <table className="table w-full">
+            <thead>
+              <tr>
+                <th>โค้ด</th>
+                <th>หมายเหตุ</th>
+                <th>ใช้แล้ว/โควตา</th>
+                <th>หมดอายุ</th>
+                <th>สถานะ</th>
+                <th>สร้างเมื่อ</th>
+                <th className="text-right">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody>
               {initialInvites.map((invite) => {
                 const status = inviteStatusLabel(
                   {
@@ -172,114 +149,150 @@ export function InvitesClient({ initialInvites }: { initialInvites: InviteViewRo
                 const registerLink = `/register?code=${invite.code}`;
 
                 return (
-                  <TableRow key={invite.code}>
-                    <TableCell>
-                      <Link component={NextLink} href={`/admin/invites/${invite.code}`}>
+                  <tr key={invite.code}>
+                    <td>
+                      <NextLink href={`/admin/invites/${invite.code}`} className="link link-hover">
                         {invite.code}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{invite.note ?? "-"}</TableCell>
-                    <TableCell>{`${invite.usedCount} / ${invite.maxUses ?? "∞"}`}</TableCell>
-                    <TableCell>{formatDate(invite.expiresAt)}</TableCell>
-                    <TableCell>{status}</TableCell>
-                    <TableCell>{formatDate(invite.createdAt)}</TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        size="small"
-                        aria-label={`คัดลอกโค้ด ${invite.code}`}
-                        onClick={() => copyText(invite.code, "คัดลอกโค้ดแล้ว")}
-                      >
-                        <Iconify icon="solar:copy-bold-duotone" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        aria-label={`คัดลอกลิงก์ ${invite.code}`}
-                        onClick={() =>
-                          copyText(`${window.location.origin}${registerLink}`, "คัดลอกลิงก์แล้ว")
-                        }
-                      >
-                        <Iconify icon="solar:link-bold-duotone" />
-                      </IconButton>
-                      <Switch
-                        checked={!disabled}
-                        disabled={pendingCode === invite.code}
-                        onChange={(e) => toggleDisabled(invite.code, !e.target.checked)}
-                        slotProps={{ input: { "aria-label": `เปิด/ปิดใช้งาน ${invite.code}` } }}
-                      />
-                    </TableCell>
-                  </TableRow>
+                      </NextLink>
+                    </td>
+                    <td>{invite.note ?? "-"}</td>
+                    <td>{`${invite.usedCount} / ${invite.maxUses ?? "∞"}`}</td>
+                    <td>{formatDate(invite.expiresAt)}</td>
+                    <td>{status}</td>
+                    <td>{formatDate(invite.createdAt)}</td>
+                    <td className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          aria-label={`คัดลอกโค้ด ${invite.code}`}
+                          onClick={() => copyText(invite.code, "คัดลอกโค้ดแล้ว")}
+                          className="btn btn-ghost btn-square btn-sm"
+                        >
+                          <Copy size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`คัดลอกลิงก์ ${invite.code}`}
+                          onClick={() =>
+                            copyText(`${window.location.origin}${registerLink}`, "คัดลอกลิงก์แล้ว")
+                          }
+                          className="btn btn-ghost btn-square btn-sm"
+                        >
+                          <LinkIcon size={16} />
+                        </button>
+                        <input
+                          type="checkbox"
+                          className="toggle"
+                          checked={!disabled}
+                          disabled={pendingCode === invite.code}
+                          onChange={(e) => toggleDisabled(invite.code, !e.target.checked)}
+                          aria-label={`เปิด/ปิดใช้งาน ${invite.code}`}
+                        />
+                      </div>
+                    </td>
+                  </tr>
                 );
               })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Card>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="xs">
-        <Box component="form" onSubmit={handleCreate}>
-          <DialogTitle>สร้างโค้ด</DialogTitle>
-          <DialogContent>
-            <Stack spacing={2} sx={{ pt: 1 }}>
-              {error && <Alert severity="error">{error}</Alert>}
-              <RadioGroup
-                row
-                value={mode}
-                onChange={(e) => setMode(e.target.value as "random" | "custom")}
-              >
-                <FormControlLabel value="random" control={<Radio />} label="สุ่ม" />
-                <FormControlLabel value="custom" control={<Radio />} label="กำหนดเอง" />
-              </RadioGroup>
-              {mode === "custom" && (
-                <TextField
-                  label="โค้ด"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  required
-                  fullWidth
-                />
-              )}
-              <TextField
-                label="หมายเหตุ"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                slotProps={{ htmlInput: { maxLength: 100 } }}
-                fullWidth
+      <Modal open={dialogOpen} title="สร้างโค้ด" onClose={() => setDialogOpen(false)}>
+        <form onSubmit={handleCreate} className="flex flex-col gap-4 pt-2">
+          {error && (
+            <div role="alert" className="alert alert-error">
+              <span>{error}</span>
+            </div>
+          )}
+          <div className="flex gap-4">
+            <label className="label cursor-pointer gap-2">
+              <input
+                type="radio"
+                name="invite-code-mode"
+                className="radio"
+                value="random"
+                checked={mode === "random"}
+                onChange={() => setMode("random")}
               />
-              <TextField
-                label="โควตา"
-                type="number"
-                value={quota}
-                onChange={(e) => setQuota(e.target.value)}
-                helperText="เว้นว่างสำหรับไม่จำกัด"
-                slotProps={{ htmlInput: { min: 1, max: 10000 } }}
-                fullWidth
+              <span className="label-text">สุ่ม</span>
+            </label>
+            <label className="label cursor-pointer gap-2">
+              <input
+                type="radio"
+                name="invite-code-mode"
+                className="radio"
+                value="custom"
+                checked={mode === "custom"}
+                onChange={() => setMode("custom")}
               />
-              <TextField
-                label="วันหมดอายุ"
-                type="date"
-                value={expiresAt}
-                onChange={(e) => setExpiresAt(e.target.value)}
-                helperText="เว้นว่างสำหรับไม่มีวันหมดอายุ"
-                slotProps={{ inputLabel: { shrink: true } }}
-                fullWidth
+              <span className="label-text">กำหนดเอง</span>
+            </label>
+          </div>
+          {mode === "custom" && (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="invite-code" className="label">
+                <span className="label-text">โค้ด</span>
+              </label>
+              <input
+                id="invite-code"
+                className="input w-full"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                required
               />
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setDialogOpen(false)}>ยกเลิก</Button>
-            <Button type="submit" variant="contained" disabled={submitting}>
+            </div>
+          )}
+          <div className="flex flex-col gap-1">
+            <label htmlFor="invite-note" className="label">
+              <span className="label-text">หมายเหตุ</span>
+            </label>
+            <input
+              id="invite-note"
+              className="input w-full"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={100}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="invite-quota" className="label">
+              <span className="label-text">โควตา</span>
+            </label>
+            <input
+              id="invite-quota"
+              type="number"
+              className="input w-full"
+              value={quota}
+              onChange={(e) => setQuota(e.target.value)}
+              min={1}
+              max={10000}
+            />
+            <span className="text-base-content/60 text-xs">เว้นว่างสำหรับไม่จำกัด</span>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="invite-expires-at" className="label">
+              <span className="label-text">วันหมดอายุ</span>
+            </label>
+            <input
+              id="invite-expires-at"
+              type="date"
+              className="input w-full"
+              value={expiresAt}
+              onChange={(e) => setExpiresAt(e.target.value)}
+            />
+            <span className="text-base-content/60 text-xs">เว้นว่างสำหรับไม่มีวันหมดอายุ</span>
+          </div>
+          <div className="modal-action">
+            <button type="button" className="btn" onClick={() => setDialogOpen(false)}>
+              ยกเลิก
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={submitting}>
               สร้าง
-            </Button>
-          </DialogActions>
-        </Box>
-      </Dialog>
-
-      <Snackbar
-        open={Boolean(toast)}
-        autoHideDuration={2000}
-        onClose={() => setToast(null)}
-        message={toast ?? ""}
-      />
-    </Stack>
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </div>
   );
 }

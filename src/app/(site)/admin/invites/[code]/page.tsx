@@ -1,13 +1,3 @@
-import Card from "@mui/material/Card";
-import Stack from "@mui/material/Stack";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Typography from "@mui/material/Typography";
-
 import { requireAdmin } from "@/server/auth/page-guards";
 import { getDeps } from "@/server/env";
 import { listInviteUsers } from "@/server/invites/invites";
@@ -30,40 +20,38 @@ export default async function AdminInviteUsersPage({
   const users = await listInviteUsers(deps, code);
 
   return (
-    <Stack spacing={3}>
-      <Typography variant="h4">ผู้ใช้โค้ด {code}</Typography>
+    <div className="flex max-w-7xl flex-col gap-6">
+      <h1 className="text-2xl font-semibold">ผู้ใช้โค้ด {code}</h1>
 
-      <Card>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ชื่อผู้ใช้</TableCell>
-                <TableCell>ชื่อ</TableCell>
-                <TableCell>ใช้เมื่อ</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
+      <div className="card bg-base-100 shadow">
+        <div className="overflow-x-auto">
+          <table className="table w-full">
+            <thead>
+              <tr>
+                <th>ชื่อผู้ใช้</th>
+                <th>ชื่อ</th>
+                <th>ใช้เมื่อ</th>
+              </tr>
+            </thead>
+            <tbody>
               {users.map((u) => (
-                <TableRow key={u.userId}>
-                  <TableCell>{u.username ?? "-"}</TableCell>
-                  <TableCell>{u.name}</TableCell>
-                  <TableCell>{dateFormatter.format(u.redeemedAt)}</TableCell>
-                </TableRow>
+                <tr key={u.userId}>
+                  <td>{u.username ?? "-"}</td>
+                  <td>{u.name}</td>
+                  <td>{dateFormatter.format(u.redeemedAt)}</td>
+                </tr>
               ))}
               {users.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={3}>
-                    <Typography variant="body2" color="text.secondary">
-                      ยังไม่มีผู้ใช้โค้ดนี้
-                    </Typography>
-                  </TableCell>
-                </TableRow>
+                <tr>
+                  <td colSpan={3}>
+                    <span className="text-base-content/60 text-sm">ยังไม่มีผู้ใช้โค้ดนี้</span>
+                  </td>
+                </tr>
               )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Card>
-    </Stack>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   );
 }
