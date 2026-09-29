@@ -3,15 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import Alert from "@mui/material/Alert";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import Container from "@mui/material/Container";
-import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-
 import { ERROR_MESSAGES } from "@/ui/error-messages";
 
 export type OnboardingFormProps = {
@@ -51,41 +42,54 @@ export function OnboardingForm({ needsInvite }: OnboardingFormProps) {
   const slugPreview = slug.trim().toLowerCase() || "your-slug";
 
   return (
-    <Container maxWidth="xs" sx={{ py: 8 }}>
-      <Card sx={{ p: 4 }}>
-        <Typography variant="h4" sx={{ mb: 1 }}>
-          ตั้งค่าบัญชี
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          ก่อนเริ่มใช้งาน กรุณากรอกข้อมูลให้ครบ
-        </Typography>
+    <div className="mx-auto flex max-w-xs flex-col py-16">
+      <div className="card bg-base-100 shadow p-8">
+        <h1 className="mb-1 text-3xl font-medium">ตั้งค่าบัญชี</h1>
+        <p className="text-base-content/60 mb-6 text-sm">ก่อนเริ่มใช้งาน กรุณากรอกข้อมูลให้ครบ</p>
 
-        <Box component="form" onSubmit={handleSubmit}>
-          <Stack spacing={2}>
-            {error && <Alert severity="error">{error}</Alert>}
-            {needsInvite && (
-              <TextField
-                label="Invite code"
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {error && (
+            <div role="alert" className="alert alert-error">
+              <span>{error}</span>
+            </div>
+          )}
+
+          {needsInvite && (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="onboarding-invite-code" className="label">
+                <span className="label-text">Invite code</span>
+              </label>
+              <input
+                id="onboarding-invite-code"
+                className="input w-full"
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value)}
                 required
-                fullWidth
               />
-            )}
-            <TextField
-              label="Slug"
+            </div>
+          )}
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="onboarding-slug" className="label">
+              <span className="label-text">Slug</span>
+            </label>
+            <input
+              id="onboarding-slug"
+              className="input w-full"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
-              helperText={`tippaw.../${slugPreview}`}
               required
-              fullWidth
             />
-            <Button type="submit" size="large" variant="contained" disabled={submitting} fullWidth>
-              บันทึก
-            </Button>
-          </Stack>
-        </Box>
-      </Card>
-    </Container>
+            <div className="label">
+              <span className="label-text-alt">{`tippaw.../${slugPreview}`}</span>
+            </div>
+          </div>
+
+          <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
+            บันทึก
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }

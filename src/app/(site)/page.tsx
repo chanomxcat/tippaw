@@ -2,35 +2,16 @@
 
 import Link from "next/link";
 
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
-
 export default function Home() {
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 3,
-        textAlign: "center",
-        px: 2,
-      }}
-    >
-      <Typography variant="h2" sx={{ color: "primary.dark" }}>
-        TipPaw
-      </Typography>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-4 text-center">
+      <h1 className="text-accent text-5xl font-medium">TipPaw</h1>
 
-      <Typography variant="body1" sx={{ color: "text.secondary" }}>
-        แพลตฟอร์มรับโดเนทสำหรับสตรีมเมอร์
-      </Typography>
+      <p className="text-base-content/60">แพลตฟอร์มรับโดเนทสำหรับสตรีมเมอร์</p>
 
-      <Button component={Link} href="/login" variant="contained" size="large">
+      <Link href="/login" className="btn btn-primary btn-lg">
         เข้าสู่ระบบ
-      </Button>
-    </Box>
+      </Link>
+    </div>
   );
 }

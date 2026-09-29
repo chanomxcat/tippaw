@@ -4,17 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import NextLink from "next/link";
 
-import Alert from "@mui/material/Alert";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import Container from "@mui/material/Container";
-import Divider from "@mui/material/Divider";
-import Link from "@mui/material/Link";
-import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-
 export type LoginFormProps = {
   hasGoogle: boolean;
   hasStreamlabs: boolean;
@@ -65,70 +54,81 @@ export function LoginForm({ hasGoogle, hasStreamlabs }: LoginFormProps) {
   }
 
   return (
-    <Container maxWidth="xs" sx={{ py: 8 }}>
-      <Card sx={{ p: 4 }}>
-        <Typography variant="h4" sx={{ mb: 3 }}>
-          เข้าสู่ระบบ
-        </Typography>
+    <div className="mx-auto flex max-w-xs flex-col py-16">
+      <div className="card bg-base-100 shadow p-8">
+        <h1 className="mb-6 text-3xl font-medium">เข้าสู่ระบบ</h1>
 
-        <Stack spacing={1.5} sx={{ mb: 3 }}>
+        <div className="mb-6 flex flex-col gap-3">
           {hasGoogle && (
-            <Button
-              fullWidth
-              size="large"
-              variant="outlined"
+            <button
+              type="button"
+              className="btn btn-outline btn-block"
               onClick={() => signInWithSocial("google")}
             >
               เข้าสู่ระบบด้วย Google
-            </Button>
+            </button>
           )}
           {hasStreamlabs && (
-            <Button
-              fullWidth
-              size="large"
-              variant="outlined"
+            <button
+              type="button"
+              className="btn btn-outline btn-block"
               onClick={() => signInWithSocial("streamlabs")}
             >
               เข้าสู่ระบบด้วย Streamlabs
-            </Button>
+            </button>
           )}
-        </Stack>
+        </div>
 
-        {(hasGoogle || hasStreamlabs) && <Divider sx={{ mb: 3 }}>หรือ</Divider>}
+        {(hasGoogle || hasStreamlabs) && <div className="divider mb-6">หรือ</div>}
 
-        <Box component="form" onSubmit={handleSubmit}>
-          <Stack spacing={2}>
-            {error && <Alert severity="error">{error}</Alert>}
-            <TextField
-              label="ชื่อผู้ใช้"
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {error && (
+            <div role="alert" className="alert alert-error">
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="login-username" className="label">
+              <span className="label-text">ชื่อผู้ใช้</span>
+            </label>
+            <input
+              id="login-username"
+              className="input w-full"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
               required
-              fullWidth
             />
-            <TextField
-              label="รหัสผ่าน"
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="login-password" className="label">
+              <span className="label-text">รหัสผ่าน</span>
+            </label>
+            <input
+              id="login-password"
               type="password"
+              className="input w-full"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
               required
-              fullWidth
             />
-            <Button type="submit" size="large" variant="contained" disabled={submitting} fullWidth>
-              เข้าสู่ระบบ
-            </Button>
-          </Stack>
-        </Box>
+          </div>
 
-        <Typography variant="body2" sx={{ mt: 3, textAlign: "center" }}>
+          <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
+            เข้าสู่ระบบ
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-sm">
           ยังไม่มีบัญชี?{" "}
-          <Link component={NextLink} href="/register">
+          <NextLink href="/register" className="link link-primary">
             สมัครสมาชิก
-          </Link>
-        </Typography>
-      </Card>
-    </Container>
+          </NextLink>
+        </p>
+      </div>
+    </div>
   );
 }

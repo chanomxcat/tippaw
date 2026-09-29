@@ -4,16 +4,6 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import NextLink from "next/link";
 
-import Alert from "@mui/material/Alert";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import Container from "@mui/material/Container";
-import Link from "@mui/material/Link";
-import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-
 const ERROR_MESSAGES: Record<string, string> = {
   invite_invalid: "invite code ไม่ถูกต้อง",
   rate_limited: "ลองใหม่อีกครั้งในอีกสักครู่",
@@ -55,52 +45,71 @@ export function RegisterForm() {
   }
 
   return (
-    <Container maxWidth="xs" sx={{ py: 8 }}>
-      <Card sx={{ p: 4 }}>
-        <Typography variant="h4" sx={{ mb: 3 }}>
-          สมัครสมาชิก
-        </Typography>
+    <div className="mx-auto flex max-w-xs flex-col py-16">
+      <div className="card bg-base-100 shadow p-8">
+        <h1 className="mb-6 text-3xl font-medium">สมัครสมาชิก</h1>
 
-        <Box component="form" onSubmit={handleSubmit}>
-          <Stack spacing={2}>
-            {error && <Alert severity="error">{error}</Alert>}
-            <TextField
-              label="ชื่อผู้ใช้"
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {error && (
+            <div role="alert" className="alert alert-error">
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="register-username" className="label">
+              <span className="label-text">ชื่อผู้ใช้</span>
+            </label>
+            <input
+              id="register-username"
+              className="input w-full"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
               required
-              fullWidth
             />
-            <TextField
-              label="รหัสผ่าน"
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="register-password" className="label">
+              <span className="label-text">รหัสผ่าน</span>
+            </label>
+            <input
+              id="register-password"
               type="password"
+              className="input w-full"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
               required
-              fullWidth
             />
-            <TextField
-              label="Invite code"
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="register-invite-code" className="label">
+              <span className="label-text">Invite code</span>
+            </label>
+            <input
+              id="register-invite-code"
+              className="input w-full"
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value)}
               required
-              fullWidth
             />
-            <Button type="submit" size="large" variant="contained" disabled={submitting} fullWidth>
-              สมัครสมาชิก
-            </Button>
-          </Stack>
-        </Box>
+          </div>
 
-        <Typography variant="body2" sx={{ mt: 3, textAlign: "center" }}>
+          <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
+            สมัครสมาชิก
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-sm">
           มีบัญชีอยู่แล้ว?{" "}
-          <Link component={NextLink} href="/login">
+          <NextLink href="/login" className="link link-primary">
             เข้าสู่ระบบ
-          </Link>
-        </Typography>
-      </Card>
-    </Container>
+          </NextLink>
+        </p>
+      </div>
+    </div>
   );
 }
