@@ -72,7 +72,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="th" className={prompt.variable}>
+    <html lang="th" className={prompt.variable} suppressHydrationWarning>
       <head>
         <script
           // eslint-disable-next-line react/no-danger
