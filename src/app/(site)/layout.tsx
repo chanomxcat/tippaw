@@ -4,7 +4,6 @@ import "../globals.css";
 
 import { getDeps } from "@/server/env";
 import { getSiteUrl } from "@/server/site-url";
-import { Providers } from "@/ui/providers";
 import { ToastProvider } from "@/components/ui/toast";
 
 const prompt = Prompt({
@@ -88,9 +87,7 @@ export default function RootLayout({
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <Providers>
-          <ToastProvider>{children}</ToastProvider>
-        </Providers>
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );

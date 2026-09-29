@@ -299,17 +299,15 @@ API route ทำแค่: ตรวจ session → ตรวจ input (Zod) →
 
 ## 11. UI & Design system
 
-### Template และ component library
-- ใช้ **Minimal แบบฟรี** ([minimal-ui-kit/material-kit-react](https://github.com/minimal-ui-kit/material-kit-react), MIT) บน **MUI**
-- ตัวฟรีเป็น **Vite + React Router** (เวอร์ชัน Next.js มีเฉพาะ Pro) → **port** เข้า Next.js App Router:
-  - คัดลอก `theme/`, `layouts/` (dashboard: nav, header), `components/` (iconify, label, scrollbar ฯลฯ) มาไว้ที่ `src/ui/minimal/` พร้อมใส่ LICENSE/attribution
-  - เปลี่ยน React Router (`Link`, `useNavigate`, `useLocation`) → `next/link`, `next/navigation`
-  - ใช้ `@mui/material-nextjs` (`AppRouterCacheProvider`) สำหรับ Emotion SSR; component ที่ใช้ MUI เป็น Client Component ตามจำเป็น
-  - ส่วนที่ template ฟรีไม่มี (ฟอร์มขั้นสูง, color picker, uploader แบบ URL ฯลฯ) เขียนเพิ่มด้วย MUI ในสไตล์เดียวกัน
-  - ตัดหน้าตัวอย่าง (products, blog, users) ทิ้ง
-- ใช้ MUI กับ **dashboard, หน้า auth, หน้า Tip, หน้า Gift, หน้า mock** เท่านั้น
-- **Overlay ไม่ใช้ MUI** — React + CSS ล้วน (CSS variables จาก settings) เพื่อให้โหลดเร็วและเบาใน OBS browser source; พื้นหลังโปร่งใส
-- โหมดมืดของ dashboard: ไม่อยู่ในขอบเขต MVP (template ฟรีไม่มี)
+> **อัปเดต (2026-09-29):** ทั้งแอปย้ายจาก MUI + Emotion + Minimal (free) ไปเป็น **Tailwind CSS v4 + daisyUI** แล้ว (Task 1–9 ของแผน migration) รายละเอียดทั้งหมด — เหตุผล, การแมป token, งานย้ายทีละหน้า, primitive ที่ใช้ร่วมกัน (`src/components/ui/toast.tsx`, `src/components/ui/modal.tsx`), shell ของ dashboard/admin (`src/components/layout/**`) — อยู่ที่ `docs/superpowers/specs/2026-09-29-daisyui-migration-design.md` เอกสารข้างล่างนี้คงไว้เฉพาะส่วนที่ยังใช้อ้างอิงได้ (palette/typography) และสรุปสถาปัตยกรรมปัจจุบันแทนส่วนเดิมที่พูดถึง MUI/Minimal
+
+### Template และ component library (ปัจจุบัน)
+- ใช้ **Tailwind CSS v4** (`@import "tailwindcss"`) ร่วมกับ **daisyUI** (ผ่าน `@plugin "daisyui"` ใน `src/app/globals.css`) เป็น styling stack เดียวทั้งแอป ไม่มี CSS-in-JS/Emotion แล้ว
+- สอง theme ของ daisyUI: **`tippaw`** (light, default) และ **`tippaw-dark`** (`--prefersdark`) กำหนด token สีผ่าน `@plugin "daisyui/theme"` โดยแมปจาก palette เดิมของสเปกนี้ (ดูตารางด้านล่าง) เป็น `--color-primary`, `--color-secondary`, `--color-base-100/200/300` ฯลฯ
+- โหมดมืดครอบคลุมทั้งแอป (dashboard, auth, หน้า Tip, หน้า admin) สลับ theme ด้วย `data-theme` บน `<html>`, จำค่าไว้ใน `localStorage` (`tippaw-theme`) และมี no-flash script ใน `src/app/(site)/layout.tsx` อ่านค่าก่อน paint
+- Layout ของ dashboard/admin เป็น `src/components/layout/**` (แทนที่ `src/ui/minimal/layouts/dashboard/*`) ไอคอนทั้งหมดใช้ `lucide-react` โดยตรง (แทนที่ `@iconify/react`) และ scroll ปกติของ browser (ไม่มี `simplebar-react` แล้ว)
+- **Overlay ไม่ใช้ daisyUI/Tailwind theme ของแอป** — มี root layout และ reset CSS ของตัวเอง (`src/app/overlay/overlay-reset.css`) เพื่อให้พื้นหลังโปร่งใสเสมอ ไม่ปนกับ theme ของ `(site)` route group
+- `src/ui/minimal/**` และ `src/ui/providers.tsx` (MUI theme + `AppRouterCacheProvider`) ถูกลบทั้งหมดแล้ว พร้อม dependency ที่เกี่ยวข้อง (`@mui/material`, `@mui/material-nextjs`, `@emotion/react`, `@emotion/styled`, `minimal-shared`, `simplebar-react`, `@iconify/react`)
 
 ### Palette
 
@@ -323,10 +321,10 @@ API route ทำแค่: ตรวจ session → ตรวจ input (Zod) →
 | `secondary.main` | `#F8B2B2` | highlight, badge, hero/การ์ดเด่นบนหน้า Tip |
 | `secondary.contrastText` | `#403D88` | ตัวอักษรบนพื้นชมพู (ห้ามใช้ตัวขาวบน `#F8B2B2`) |
 
-สีสถานะ (success/warning/error/info) และ grey ใช้ค่าเดิมของ Minimal
+สีสถานะ (success/warning/error/info) และ grey แมปเป็น daisyUI token (`--color-info/success/warning/error`, `--color-neutral`, `--color-base-200/300`) ใน `tippaw`/`tippaw-dark` theme ตามด้านบน
 
 ### Typography
-- ฟอนต์ **Prompt** (Google Fonts, weight 100–900 + italic, subset `thai` + `latin`) โหลดผ่าน `next/font/google` (self-host ตอน build) แทนฟอนต์เดิมของ template — ตั้งเป็น `typography.fontFamily` ของ MUI theme
+- ฟอนต์ **Prompt** (Google Fonts, weight 100–900 + italic, subset `thai` + `latin`) โหลดผ่าน `next/font/google` (self-host ตอน build) — ผูกเป็น CSS variable `--font-prompt` แล้วตั้งเป็น `--font-sans` ใน `@theme` ของ `src/app/globals.css`
 - ค่าเริ่มต้น: body 400, หัวข้อ 600–700
 - Overlay ใช้ Prompt เป็นค่าเริ่มต้น; เฟส 2 เลือก Google Font อื่นได้
 

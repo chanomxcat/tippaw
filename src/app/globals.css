@@ -52,4 +52,14 @@
     margin: 0;
     padding: 0;
   }
+
+  /* daisyUI's rootcolor.css only paints `:root`/`[data-theme]` (the <html>
+     element per the no-flash script in (site)/layout.tsx); background-color
+     doesn't inherit, so <body> stays transparent unless set explicitly here.
+     Scoped to globals.css, which only the (site) route group imports — the
+     `/overlay/**` group uses its own overlay-reset.css instead (see there). */
+  body {
+    background-color: var(--color-base-100);
+    color: var(--color-base-content);
+  }
 }

@@ -4,9 +4,8 @@ import { Prompt } from "next/font/google";
 import "./overlay-reset.css";
 
 // A separate Next.js root layout (own <html>/<body>) for the `/overlay/**`
-// route group — it must NOT wrap pages in `@/ui/providers` (MUI +
-// CssBaseline), since CssBaseline sets a non-transparent body background
-// and pulls in styling the OBS browser-source overlay must not have. The
+// route group — it must NOT pick up the (site) group's daisyUI/Tailwind
+// theming, since the OBS browser-source overlay must stay transparent. The
 // transparent-body reset itself lives in ./overlay-reset.css, imported only
 // here, so it can never leak into the (site) group via AlertPlayer's shared
 // (animation-only) alert.css.
