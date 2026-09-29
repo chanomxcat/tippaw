@@ -2,9 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
-
 const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
 
 export type ColorFieldProps = {
@@ -34,30 +31,27 @@ export function ColorField({ label, value, onChange }: ColorFieldProps) {
   }
 
   return (
-    <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
-      <TextField
-        label={label}
-        value={text}
-        onChange={(e) => handleChange(e.target.value)}
-        error={invalid}
-        helperText={invalid ? "ต้องเป็นรหัสสี hex 6 หลัก เช่น #FFFFFF" : " "}
-        size="small"
-      />
+    <div className="flex items-start gap-3">
+      <label className="flex flex-col gap-1">
+        <span className="label-text">{label}</span>
+        <input
+          type="text"
+          aria-label={label}
+          className={`input input-sm ${invalid ? "input-error" : ""}`}
+          value={text}
+          onChange={(e) => handleChange(e.target.value)}
+        />
+        <span className={`text-xs ${invalid ? "text-error" : "text-transparent"}`}>
+          ต้องเป็นรหัสสี hex 6 หลัก เช่น #FFFFFF
+        </span>
+      </label>
       <input
         type="color"
         aria-label={`${label} (ตัวเลือกสี)`}
+        className="mt-6 h-10 w-10 cursor-pointer border-0 bg-transparent p-0"
         value={HEX_COLOR.test(text) ? text : value}
         onChange={(e) => handleChange(e.target.value)}
-        style={{
-          width: 40,
-          height: 40,
-          marginTop: 8,
-          border: "none",
-          background: "none",
-          padding: 0,
-          cursor: "pointer",
-        }}
       />
-    </Stack>
+    </div>
   );
 }

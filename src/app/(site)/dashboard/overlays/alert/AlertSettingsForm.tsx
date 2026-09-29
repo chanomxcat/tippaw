@@ -2,26 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
-import Alert from "@mui/material/Alert";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
-import IconButton from "@mui/material/IconButton";
-import InputAdornment from "@mui/material/InputAdornment";
-import MenuItem from "@mui/material/MenuItem";
-import Slider from "@mui/material/Slider";
-import Snackbar from "@mui/material/Snackbar";
-import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
+import { Copy, Eye, EyeOff } from "lucide-react";
 
 import { ColorField } from "@/components/ColorField";
+import { Modal } from "@/components/ui/modal";
+import { useToast } from "@/components/ui/toast";
 import { AlertPlayer } from "@/overlay/AlertPlayer";
 import { resolveSoundUrl } from "@/server/alerts/build-event";
 import { renderTemplate } from "@/server/alerts/render-template";
@@ -34,7 +19,6 @@ import {
   type SoundPreset,
 } from "@/server/alerts/schemas";
 import { thbToSatang } from "@/server/lib/money";
-import { Iconify } from "@/ui/minimal/components/iconify";
 import { ERROR_MESSAGES } from "@/ui/error-messages";
 
 export type AlertSettingsFormProps = {
@@ -78,6 +62,7 @@ export function AlertSettingsForm({
   variant,
 }: AlertSettingsFormProps) {
   const router = useRouter();
+  const { show: showToast } = useToast();
   const initialSound = parseSound(variant.soundUrl);
 
   const [overlayUrl, setOverlayUrl] = useState(initialOverlayUrl);
@@ -97,7 +82,6 @@ export function AlertSettingsForm({
   const [testing, setTesting] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
   const [previewTick, setPreviewTick] = useState(0);
 
   const currentSoundUrl = soundMode === "custom" ? customSoundUrl.trim() || null : `preset:${soundMode}`;
@@ -134,7 +118,7 @@ export function AlertSettingsForm({
         setError(ERROR_MESSAGES[errBody?.error ?? ""] ?? "บันทึกไม่สำเร็จ");
         return;
       }
-      setToast("บันทึกแล้ว");
+      showToast("บันทึกแล้ว");
       router.refresh();
     } finally {
       setSubmitting(false);
@@ -145,7 +129,7 @@ export function AlertSettingsForm({
     setTesting(true);
     try {
       const res = await fetch("/api/overlays/alert/test", { method: "POST" });
-      setToast(res.ok ? "ส่ง Alert ทดสอบแล้ว" : "ทดสอบไม่สำเร็จ");
+      showToast(res.ok ? "ส่ง Alert ทดสอบแล้ว" : "ทดสอบไม่สำเร็จ", res.ok ? "success" : "error");
     } finally {
       setTesting(false);
     }
@@ -158,9 +142,9 @@ export function AlertSettingsForm({
       if (res.ok) {
         const data = (await res.json()) as { overlayUrl: string };
         setOverlayUrl(data.overlayUrl);
-        setToast("รีเซ็ต URL แล้ว");
+        showToast("รีเซ็ต URL แล้ว");
       } else {
-        setToast("รีเซ็ตไม่สำเร็จ");
+        showToast("รีเซ็ตไม่สำเร็จ", "error");
       }
     } finally {
       setResetting(false);
@@ -177,8 +161,8 @@ export function AlertSettingsForm({
   function copyOverlayUrl() {
     navigator.clipboard
       ?.writeText(overlayUrl)
-      .then(() => setToast("คัดลอกลิงก์แล้ว"))
-      .catch(() => setToast("คัดลอกไม่สำเร็จ"));
+      .then(() => showToast("คัดลอกลิงก์แล้ว"))
+      .catch(() => showToast("คัดลอกไม่สำเร็จ", "error"));
   }
 
   const previewText = renderTemplate(messageTemplate, {
@@ -211,224 +195,244 @@ export function AlertSettingsForm({
   };
 
   return (
-    <Stack spacing={3} sx={{ maxWidth: 960 }}>
-      <Typography variant="h4">ตั้งค่า Alert Overlay</Typography>
+    <div className="flex max-w-5xl flex-col gap-6">
+      <h1 className="text-2xl font-semibold">ตั้งค่า Alert Overlay</h1>
 
-      <Card sx={{ p: 3 }}>
-        <Stack spacing={2}>
-          <Typography variant="h6">Overlay URL</Typography>
-          <TextField
-            label="Overlay URL"
-            type={showUrl ? "text" : "password"}
-            value={overlayUrl}
-            fullWidth
-            slotProps={{
-              htmlInput: { readOnly: true },
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      type="button"
-                      size="small"
-                      aria-label={showUrl ? "ซ่อน URL" : "แสดง URL"}
-                      onClick={() => setShowUrl((s) => !s)}
-                    >
-                      <Iconify icon={showUrl ? "solar:eye-closed-bold-duotone" : "solar:eye-bold-duotone"} />
-                    </IconButton>
-                    <IconButton
-                      type="button"
-                      size="small"
-                      aria-label="คัดลอก URL"
-                      onClick={copyOverlayUrl}
-                    >
-                      <Iconify icon="solar:copy-bold-duotone" />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
-          <Typography variant="body2" color="text.secondary">
-            ใส่ใน OBS → Sources → Browser, ขนาด 800×600
-          </Typography>
-          <Stack direction="row" spacing={2}>
-            <Button type="button" variant="outlined" onClick={handleTestAlert} disabled={testing}>
+      <div className="card bg-base-100 shadow p-6">
+        <div className="flex flex-col gap-4">
+          <h2 className="text-lg font-semibold">Overlay URL</h2>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="alert-overlay-url" className="label">
+              <span className="label-text">Overlay URL</span>
+            </label>
+            <div className="join w-full">
+              <input
+                id="alert-overlay-url"
+                type={showUrl ? "text" : "password"}
+                className="input join-item w-full"
+                value={overlayUrl}
+                readOnly
+              />
+              <button
+                type="button"
+                aria-label={showUrl ? "ซ่อน URL" : "แสดง URL"}
+                onClick={() => setShowUrl((s) => !s)}
+                className="btn join-item btn-square"
+              >
+                {showUrl ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+              <button
+                type="button"
+                aria-label="คัดลอก URL"
+                onClick={copyOverlayUrl}
+                className="btn join-item btn-square"
+              >
+                <Copy size={16} />
+              </button>
+            </div>
+          </div>
+          <p className="text-base-content/60 text-sm">ใส่ใน OBS → Sources → Browser, ขนาด 800×600</p>
+          <div className="flex gap-2">
+            <button type="button" className="btn btn-outline" onClick={handleTestAlert} disabled={testing}>
               ทดสอบ Alert
-            </Button>
-            <Button type="button" variant="outlined" color="error" onClick={() => setResetOpen(true)}>
+            </button>
+            <button type="button" className="btn btn-outline btn-error" onClick={() => setResetOpen(true)}>
               รีเซ็ต URL
-            </Button>
-          </Stack>
-        </Stack>
-      </Card>
+            </button>
+          </div>
+        </div>
+      </div>
 
-      <Stack direction={{ xs: "column", md: "row" }} spacing={3} sx={{ alignItems: "flex-start" }}>
-        <Card sx={{ p: 3, flex: 2, width: "100%" }}>
-          <Box component="form" onSubmit={handleSave}>
-            <Stack spacing={2.5}>
-              {error && <Alert severity="error">{error}</Alert>}
+      <div className="flex flex-col items-start gap-6 md:flex-row">
+        <div className="card bg-base-100 w-full flex-[2] shadow p-6">
+          <form onSubmit={handleSave} className="flex flex-col gap-4">
+            {error && (
+              <div role="alert" className="alert alert-error">
+                <span>{error}</span>
+              </div>
+            )}
 
-              <TextField
-                label="ยอดขั้นต่ำที่จะแสดง (บาท)"
+            <div className="flex flex-col gap-1">
+              <label htmlFor="alert-min-amount" className="label">
+                <span className="label-text">ยอดขั้นต่ำที่จะแสดง (บาท)</span>
+              </label>
+              <input
+                id="alert-min-amount"
                 type="number"
+                className="input w-full"
                 value={minAmountThb}
                 onChange={(e) => setMinAmountThb(e.target.value)}
-                slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                min={0}
+                step={1}
                 required
               />
+            </div>
 
-              <TextField
-                label="ข้อความ template"
+            <div className="flex flex-col gap-1">
+              <label htmlFor="alert-message-template" className="label">
+                <span className="label-text">ข้อความ template</span>
+              </label>
+              <textarea
+                id="alert-message-template"
+                className="textarea w-full"
+                rows={2}
                 value={messageTemplate}
                 onChange={(e) => setMessageTemplate(e.target.value)}
-                helperText="ใช้ {name} {amount} {message} ได้"
-                slotProps={{ htmlInput: { maxLength: 200 } }}
-                multiline
-                minRows={2}
+                maxLength={200}
                 required
-                fullWidth
               />
+              <span className="text-base-content/60 text-xs">ใช้ {"{name} {amount} {message}"} ได้</span>
+            </div>
 
-              <ColorField label="สีข้อความ" value={textColor} onChange={setTextColor} />
+            <ColorField label="สีข้อความ" value={textColor} onChange={setTextColor} />
 
-              <Stack spacing={1}>
-                <Typography variant="body2">ขนาดตัวอักษร: {fontSize}px</Typography>
-                <Slider
-                  value={fontSize}
-                  onChange={(_e, v) => setFontSize(v as number)}
-                  min={12}
-                  max={120}
-                  valueLabelDisplay="auto"
-                  aria-label="ขนาดตัวอักษร"
-                />
-              </Stack>
+            <div className="flex flex-col gap-1">
+              <span className="label-text">ขนาดตัวอักษร: {fontSize}px</span>
+              <input
+                type="range"
+                aria-label="ขนาดตัวอักษร"
+                className="range"
+                min={12}
+                max={120}
+                value={fontSize}
+                onChange={(e) => setFontSize(Number(e.target.value))}
+              />
+            </div>
 
-              <TextField
-                label="รูป (URL)"
+            <div className="flex flex-col gap-1">
+              <label htmlFor="alert-image-url" className="label">
+                <span className="label-text">รูป (URL)</span>
+              </label>
+              <input
+                id="alert-image-url"
+                className="input w-full"
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder="https://..."
-                fullWidth
               />
-              {imageUrl.trim() && (
-                // eslint-disable-next-line @next/next/no-img-element -- external, arbitrary streamer-supplied URL
-                <img
-                  src={imageUrl.trim()}
-                  alt="ตัวอย่างรูป"
-                  style={{ maxWidth: 200, maxHeight: 120, objectFit: "contain" }}
-                />
-              )}
+            </div>
+            {imageUrl.trim() && (
+              // eslint-disable-next-line @next/next/no-img-element -- external, arbitrary streamer-supplied URL
+              <img src={imageUrl.trim()} alt="ตัวอย่างรูป" className="max-h-[120px] max-w-[200px] object-contain" />
+            )}
 
-              <Stack spacing={1}>
-                <TextField
-                  select
-                  label="เสียง"
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
+                <label htmlFor="alert-sound-select" className="label">
+                  <span className="label-text">เสียง</span>
+                </label>
+                <select
+                  id="alert-sound-select"
+                  className="select w-full"
                   value={soundMode}
                   onChange={(e) => setSoundMode(e.target.value as SoundPreset | "custom")}
                 >
                   {SOUND_PRESETS.map((key) => (
-                    <MenuItem key={key} value={key}>
+                    <option key={key} value={key}>
                       {SOUND_LABELS[key]}
-                    </MenuItem>
+                    </option>
                   ))}
-                  <MenuItem value="custom">กำหนด URL เอง</MenuItem>
-                </TextField>
-                {soundMode === "custom" && (
-                  <TextField
-                    label="URL เสียง"
+                  <option value="custom">กำหนด URL เอง</option>
+                </select>
+              </div>
+              {soundMode === "custom" && (
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="alert-custom-sound-url" className="label">
+                    <span className="label-text">URL เสียง</span>
+                  </label>
+                  <input
+                    id="alert-custom-sound-url"
+                    className="input w-full"
                     value={customSoundUrl}
                     onChange={(e) => setCustomSoundUrl(e.target.value)}
                     placeholder="https://..."
-                    fullWidth
                   />
-                )}
-                <Button type="button" variant="text" onClick={handleListen} sx={{ alignSelf: "flex-start" }}>
-                  ฟังเสียง
-                </Button>
-              </Stack>
+                </div>
+              )}
+              <button type="button" className="btn btn-ghost btn-sm self-start" onClick={handleListen}>
+                ฟังเสียง
+              </button>
+            </div>
 
-              <Stack direction="row" spacing={2}>
-                <TextField
-                  select
-                  label="Animation เข้า"
+            <div className="flex gap-4">
+              <div className="flex flex-1 flex-col gap-1">
+                <label htmlFor="alert-animation-in" className="label">
+                  <span className="label-text">Animation เข้า</span>
+                </label>
+                <select
+                  id="alert-animation-in"
+                  className="select w-full"
                   value={animationIn}
                   onChange={(e) => setAnimationIn(e.target.value as Animation)}
-                  sx={{ flex: 1 }}
                 >
                   {ANIMATIONS.map((a) => (
-                    <MenuItem key={a} value={a}>
+                    <option key={a} value={a}>
                       {ANIMATION_LABELS[a]}
-                    </MenuItem>
+                    </option>
                   ))}
-                </TextField>
-                <TextField
-                  select
-                  label="Animation ออก"
+                </select>
+              </div>
+              <div className="flex flex-1 flex-col gap-1">
+                <label htmlFor="alert-animation-out" className="label">
+                  <span className="label-text">Animation ออก</span>
+                </label>
+                <select
+                  id="alert-animation-out"
+                  className="select w-full"
                   value={animationOut}
                   onChange={(e) => setAnimationOut(e.target.value as Animation)}
-                  sx={{ flex: 1 }}
                 >
                   {ANIMATIONS.map((a) => (
-                    <MenuItem key={a} value={a}>
+                    <option key={a} value={a}>
                       {ANIMATION_LABELS[a]}
-                    </MenuItem>
+                    </option>
                   ))}
-                </TextField>
-              </Stack>
+                </select>
+              </div>
+            </div>
 
-              <TextField
-                label="ระยะเวลาแสดง (วินาที)"
+            <div className="flex flex-col gap-1">
+              <label htmlFor="alert-duration" className="label">
+                <span className="label-text">ระยะเวลาแสดง (วินาที)</span>
+              </label>
+              <input
+                id="alert-duration"
                 type="number"
+                className="input w-full"
                 value={durationSec}
                 onChange={(e) => setDurationSec(e.target.value)}
-                slotProps={{ htmlInput: { min: 1, max: 60, step: 1 } }}
+                min={1}
+                max={60}
+                step={1}
                 required
               />
+            </div>
 
-              <Button type="submit" variant="contained" disabled={submitting} sx={{ alignSelf: "flex-start" }}>
-                บันทึก
-              </Button>
-            </Stack>
-          </Box>
-        </Card>
+            <button type="submit" className="btn btn-primary self-start" disabled={submitting}>
+              บันทึก
+            </button>
+          </form>
+        </div>
 
-        <Card sx={{ p: 3, flex: 1, width: "100%" }}>
-          <Typography variant="subtitle2" sx={{ mb: 2 }}>
-            ตัวอย่าง
-          </Typography>
-          <Box
-            sx={{
-              bgcolor: "#111",
-              borderRadius: 1,
-              p: 3,
-              minHeight: 160,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
-            }}
-          >
+        <div className="card bg-base-100 w-full flex-1 shadow p-6">
+          <h2 className="mb-4 text-sm font-semibold">ตัวอย่าง</h2>
+          <div className="flex min-h-[160px] items-center justify-center overflow-hidden rounded-box bg-[#111] p-6">
             <AlertPlayer event={previewEvent} onDone={() => setPreviewTick((t) => t + 1)} />
-          </Box>
-        </Card>
-      </Stack>
+          </div>
+        </div>
+      </div>
 
-      <Dialog open={resetOpen} onClose={() => setResetOpen(false)}>
-        <DialogTitle>รีเซ็ต Overlay URL?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>URL เดิมจะใช้ไม่ได้ทันที</DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button type="button" onClick={() => setResetOpen(false)}>
+      <Modal open={resetOpen} title="รีเซ็ต Overlay URL?" onClose={() => setResetOpen(false)}>
+        <p>URL เดิมจะใช้ไม่ได้ทันที</p>
+        <div className="modal-action">
+          <button type="button" className="btn" onClick={() => setResetOpen(false)}>
             ยกเลิก
-          </Button>
-          <Button type="button" onClick={handleReset} color="error" disabled={resetting}>
+          </button>
+          <button type="button" className="btn btn-error" onClick={handleReset} disabled={resetting}>
             ยืนยันรีเซ็ต
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Snackbar open={Boolean(toast)} autoHideDuration={2000} onClose={() => setToast(null)} message={toast ?? ""} />
-    </Stack>
+          </button>
+        </div>
+      </Modal>
+    </div>
   );
 }
