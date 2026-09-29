@@ -2,20 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Copy } from "lucide-react";
 
-import Alert from "@mui/material/Alert";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import Chip from "@mui/material/Chip";
-import IconButton from "@mui/material/IconButton";
-import Link from "@mui/material/Link";
-import Snackbar from "@mui/material/Snackbar";
-import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-
-import { Iconify } from "@/ui/minimal/components/iconify";
+import { useToast } from "@/components/ui/toast";
 import { ERROR_MESSAGES } from "@/ui/error-messages";
 
 export type ProfileClientProps = {
@@ -27,13 +16,13 @@ export type ProfileClientProps = {
 
 export function ProfileClient({ slug: initialSlug, payout: initialPayout, baseUrl, mockMode }: ProfileClientProps) {
   const router = useRouter();
+  const { show: showToast } = useToast();
   const [slug, setSlug] = useState(initialSlug);
   const [savedSlug, setSavedSlug] = useState(initialSlug);
   const [payout, setPayout] = useState(initialPayout);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [connecting, setConnecting] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
 
   const tipPageUrl = `${baseUrl}/${savedSlug}`;
 
@@ -80,67 +69,79 @@ export function ProfileClient({ slug: initialSlug, payout: initialPayout, baseUr
   function copyTipPageUrl() {
     navigator.clipboard
       ?.writeText(tipPageUrl)
-      .then(() => setToast("คัดลอกลิงก์แล้ว"))
-      .catch(() => setToast("คัดลอกไม่สำเร็จ"));
+      .then(() => showToast("คัดลอกลิงก์แล้ว"))
+      .catch(() => showToast("คัดลอกไม่สำเร็จ", "error"));
   }
 
   return (
-    <Stack spacing={3} sx={{ maxWidth: 560 }}>
-      <Typography variant="h4">โปรไฟล์</Typography>
+    <div className="flex max-w-xl flex-col gap-6">
+      <h1 className="text-2xl font-semibold">โปรไฟล์</h1>
 
-      <Card sx={{ p: 3 }}>
-        <Box component="form" onSubmit={handleSaveSlug}>
-          <Stack spacing={2}>
-            {error && <Alert severity="error">{error}</Alert>}
-            <TextField label="Slug" value={slug} onChange={(e) => setSlug(e.target.value)} required fullWidth />
-            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-              <Link
-                href={`/${savedSlug}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                underline="hover"
-                sx={{ minWidth: 0, wordBreak: "break-all" }}
-              >
-                {tipPageUrl}
-              </Link>
-              <IconButton
-                type="button"
-                size="small"
-                aria-label="คัดลอกลิงก์หน้า Tip"
-                onClick={copyTipPageUrl}
-              >
-                <Iconify icon="solar:copy-bold-duotone" />
-              </IconButton>
-            </Stack>
-            <Button type="submit" variant="contained" disabled={submitting} sx={{ alignSelf: "flex-start" }}>
-              บันทึก
-            </Button>
-          </Stack>
-        </Box>
-      </Card>
+      <div className="card bg-base-100 shadow p-6">
+        <form onSubmit={handleSaveSlug} className="flex flex-col gap-4">
+          {error && (
+            <div role="alert" className="alert alert-error">
+              <span>{error}</span>
+            </div>
+          )}
 
-      <Card sx={{ p: 3 }}>
-        <Stack spacing={2}>
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <Typography variant="h6">ช่องทางรับเงิน</Typography>
-            {mockMode && <Chip label="โหมดทดสอบ" size="small" color="warning" />}
-          </Stack>
-          <Typography variant="body2" color="text.secondary">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="profile-slug" className="label">
+              <span className="label-text">Slug</span>
+            </label>
+            <input
+              id="profile-slug"
+              className="input w-full"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="flex min-w-0 items-center gap-1">
+            <a
+              href={`/${savedSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="link link-hover min-w-0 break-all"
+            >
+              {tipPageUrl}
+            </a>
+            <button
+              type="button"
+              aria-label="คัดลอกลิงก์หน้า Tip"
+              onClick={copyTipPageUrl}
+              className="btn btn-ghost btn-square btn-sm"
+            >
+              <Copy size={16} />
+            </button>
+          </div>
+
+          <button type="submit" className="btn btn-primary self-start" disabled={submitting}>
+            บันทึก
+          </button>
+        </form>
+      </div>
+
+      <div className="card bg-base-100 shadow p-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold">ช่องทางรับเงิน</h2>
+            {mockMode && <span className="badge badge-warning badge-sm">โหมดทดสอบ</span>}
+          </div>
+          <p className="text-base-content/60 text-sm">
             สถานะ: {payout?.status === "active" ? "เชื่อมต่อแล้ว" : "ยังไม่ได้เชื่อมต่อ"}
-          </Typography>
-          <Button
+          </p>
+          <button
             type="button"
-            variant="contained"
             onClick={handleConnectPayout}
             disabled={connecting || payout?.status === "active"}
-            sx={{ alignSelf: "flex-start" }}
+            className="btn btn-primary self-start"
           >
             เชื่อมต่อ Stripe
-          </Button>
-        </Stack>
-      </Card>
-
-      <Snackbar open={Boolean(toast)} autoHideDuration={2000} onClose={() => setToast(null)} message={toast ?? ""} />
-    </Stack>
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

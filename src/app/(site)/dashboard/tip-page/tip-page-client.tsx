@@ -2,18 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 
-import Alert from "@mui/material/Alert";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Card from "@mui/material/Card";
-import IconButton from "@mui/material/IconButton";
-import Link from "@mui/material/Link";
-import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-
-import { Iconify } from "@/ui/minimal/components/iconify";
 import { ERROR_MESSAGES } from "@/ui/error-messages";
 
 export type TipLink = { label: string; url: string };
@@ -86,123 +76,130 @@ export function TipPageClient({
   }
 
   return (
-    <Stack spacing={3} sx={{ maxWidth: 640 }}>
-      <Stack direction="row" spacing={2} sx={{ alignItems: "center", justifyContent: "space-between" }}>
-        <Typography variant="h4">ตั้งค่าหน้า Tip</Typography>
-        <Link href={`/${slug}`} target="_blank" rel="noopener noreferrer" underline="hover">
+    <div className="flex max-w-2xl flex-col gap-6">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold">ตั้งค่าหน้า Tip</h1>
+        <a href={`/${slug}`} target="_blank" rel="noopener noreferrer" className="link link-hover">
           ดูหน้า Tip
-        </Link>
-      </Stack>
+        </a>
+      </div>
 
-      <Card sx={{ p: 3 }}>
-        <Box component="form" onSubmit={handleSave}>
-          <Stack spacing={2}>
-            {error && <Alert severity="error">{error}</Alert>}
+      <div className="card bg-base-100 shadow p-6">
+        <form onSubmit={handleSave} className="flex flex-col gap-4">
+          {error && (
+            <div role="alert" className="alert alert-error">
+              <span>{error}</span>
+            </div>
+          )}
 
-            <TextField
-              label="ชื่อช่อง"
+          <div className="flex flex-col gap-1">
+            <label htmlFor="tip-page-channel-name" className="label">
+              <span className="label-text">ชื่อช่อง</span>
+            </label>
+            <input
+              id="tip-page-channel-name"
+              className="input w-full"
               value={channelName}
               onChange={(e) => setChannelName(e.target.value)}
-              slotProps={{ htmlInput: { maxLength: 50 } }}
+              maxLength={50}
               required
-              fullWidth
             />
+          </div>
 
-            <Stack spacing={1}>
-              <Typography variant="subtitle2">ลิงก์</Typography>
-              {links.map((link, index) => (
-                <Stack
-                  key={index}
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={1}
-                  sx={{ alignItems: { xs: "stretch", sm: "center" } }}
-                >
-                  <TextField
-                    label="ชื่อลิงก์"
-                    value={link.label}
-                    onChange={(e) => updateLink(index, "label", e.target.value)}
-                    slotProps={{ htmlInput: { maxLength: 30 } }}
-                    size="small"
-                    fullWidth
-                    sx={{ minWidth: 0, width: { xs: "100%", sm: 160 } }}
-                  />
-                  <TextField
-                    label="URL"
-                    value={link.url}
-                    onChange={(e) => updateLink(index, "url", e.target.value)}
-                    size="small"
-                    fullWidth
-                    sx={{ minWidth: 0 }}
-                  />
-                  <Stack direction="row" spacing={0.5} sx={{ justifyContent: { xs: "flex-end", sm: "flex-start" } }}>
-                    <IconButton
-                      type="button"
-                      size="small"
-                      aria-label="เลื่อนขึ้น"
-                      onClick={() => moveLink(index, -1)}
-                      disabled={index === 0}
-                    >
-                      <Iconify icon="solar:alt-arrow-up-bold-duotone" />
-                    </IconButton>
-                    <IconButton
-                      type="button"
-                      size="small"
-                      aria-label="เลื่อนลง"
-                      onClick={() => moveLink(index, 1)}
-                      disabled={index === links.length - 1}
-                    >
-                      <Iconify icon="solar:alt-arrow-down-bold-duotone" />
-                    </IconButton>
-                    <IconButton
-                      type="button"
-                      size="small"
-                      aria-label={`ลบลิงก์ ${index + 1}`}
-                      onClick={() => removeLink(index)}
-                    >
-                      <Iconify icon="solar:trash-bin-trash-bold-duotone" />
-                    </IconButton>
-                  </Stack>
-                </Stack>
-              ))}
-              <Button
-                type="button"
-                variant="outlined"
-                size="small"
-                onClick={addLink}
-                disabled={links.length >= MAX_LINKS}
-                sx={{ alignSelf: "flex-start" }}
-              >
-                เพิ่มลิงก์
-              </Button>
-            </Stack>
+          <div className="flex flex-col gap-2">
+            <span className="label-text">ลิงก์</span>
+            {links.map((link, index) => (
+              <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <input
+                  aria-label="ชื่อลิงก์"
+                  placeholder="ชื่อลิงก์"
+                  className="input input-sm w-full sm:w-40"
+                  value={link.label}
+                  onChange={(e) => updateLink(index, "label", e.target.value)}
+                  maxLength={30}
+                />
+                <input
+                  aria-label="URL"
+                  placeholder="URL"
+                  className="input input-sm w-full"
+                  value={link.url}
+                  onChange={(e) => updateLink(index, "url", e.target.value)}
+                />
+                <div className="flex justify-end gap-1 sm:justify-start">
+                  <button
+                    type="button"
+                    aria-label="เลื่อนขึ้น"
+                    onClick={() => moveLink(index, -1)}
+                    disabled={index === 0}
+                    className="btn btn-ghost btn-square btn-sm"
+                  >
+                    <ChevronUp size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="เลื่อนลง"
+                    onClick={() => moveLink(index, 1)}
+                    disabled={index === links.length - 1}
+                    className="btn btn-ghost btn-square btn-sm"
+                  >
+                    <ChevronDown size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label={`ลบลิงก์ ${index + 1}`}
+                    onClick={() => removeLink(index)}
+                    className="btn btn-ghost btn-square btn-sm"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addLink}
+              disabled={links.length >= MAX_LINKS}
+              className="btn btn-outline btn-sm self-start"
+            >
+              เพิ่มลิงก์
+            </button>
+          </div>
 
-            <TextField
-              label="ข้อความสำเร็จ"
+          <div className="flex flex-col gap-1">
+            <label htmlFor="tip-page-success-message" className="label">
+              <span className="label-text">ข้อความสำเร็จ</span>
+            </label>
+            <textarea
+              id="tip-page-success-message"
+              className="textarea w-full"
+              rows={2}
               value={successMessage}
               onChange={(e) => setSuccessMessage(e.target.value)}
-              slotProps={{ htmlInput: { maxLength: 300 } }}
-              multiline
-              minRows={2}
+              maxLength={300}
               required
-              fullWidth
             />
-            <TextField
-              label="ข้อความไม่สำเร็จ"
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="tip-page-failure-message" className="label">
+              <span className="label-text">ข้อความไม่สำเร็จ</span>
+            </label>
+            <textarea
+              id="tip-page-failure-message"
+              className="textarea w-full"
+              rows={2}
               value={failureMessage}
               onChange={(e) => setFailureMessage(e.target.value)}
-              slotProps={{ htmlInput: { maxLength: 300 } }}
-              multiline
-              minRows={2}
+              maxLength={300}
               required
-              fullWidth
             />
+          </div>
 
-            <Button type="submit" variant="contained" disabled={submitting} sx={{ alignSelf: "flex-start" }}>
-              บันทึก
-            </Button>
-          </Stack>
-        </Box>
-      </Card>
-    </Stack>
+          <button type="submit" className="btn btn-primary self-start" disabled={submitting}>
+            บันทึก
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }
