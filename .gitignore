@@ -38,3 +38,4 @@ npm-debug.log*
 
 # superpowers workflow scratch space
 .superpowers/
+.worktrees/
